@@ -8,11 +8,6 @@ import select
 
 from enum import Enum
 
-class GearChange(Enum):
-    STAY = 1
-    READY = 2
-    CHANGE = 3
-
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.setblocking(0)
 sock.bind(('', 1337))
@@ -54,20 +49,26 @@ class GearIndicator(QtWidgets.QLCDNumber):
         self.initWidget()
     
     def initWidget(self):
+        self.setDigitCount(1)
         self.display(0)
     
+    class GearChange(Enum):
+        STAY = 1
+        READY = 2
+        CHANGE = 3
+    
     def changeState(self, state: GearChange):
-        if state == GearChange.CHANGE:
+        if state == self.GearChange.CHANGE:
             self.setProperty("change", True)
             self.setProperty("stay", False)
             self.setProperty("ready", False)
         
-        if state == GearChange.READY:
+        if state == self.GearChange.READY:
             self.setProperty("change", False)
             self.setProperty("stay", False)
             self.setProperty("ready", True)
         
-        if state == GearChange.STAY:
+        if state == self.GearChange.STAY:
             self.setProperty("change", False)
             self.setProperty("stay", True)
             self.setProperty("ready", False)
@@ -110,11 +111,11 @@ class Dashboard(QtWidgets.QWidget):
             self.gearIndicator.display(fdp.gear)
 
             if fdp.current_engine_rpm / fdp.engine_max_rpm >= 0.8:
-                self.gearIndicator.changeState(GearChange.CHANGE)
+                self.gearIndicator.changeState(GearIndicator.GearChange.CHANGE)
             elif fdp.current_engine_rpm / fdp.engine_max_rpm >= 0.75 and fdp.current_engine_rpm / fdp.engine_max_rpm < 0.8:
-                self.gearIndicator.changeState(GearChange.READY)
+                self.gearIndicator.changeState(GearIndicator.GearChange.READY)
             else:
-                self.gearIndicator.changeState(GearChange.STAY)
+                self.gearIndicator.changeState(GearIndicator.GearChange.STAY)
 
     
     @Slot()
