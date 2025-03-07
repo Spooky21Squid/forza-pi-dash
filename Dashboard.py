@@ -4,10 +4,12 @@ from PySide6.QtCore import Qt, QObject, Signal, Slot, QThread
 import socket
 import time
 from fdp import ForzaDataPacket
+import select
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.setblocking(0)
 sock.bind(('', 1337))
+timeout = 2
 
 class Worker(QObject):
     finished = Signal()
@@ -21,12 +23,17 @@ class Worker(QObject):
     def work(self):
         while self.working:
             try:
-                data, address = sock.recvfrom(1024)
-                print('received {} bytes from {}'.format(len(data), address))
+                ready = select.select([sock], [], [], timeout)
+                if ready[0]:
+                    data, address = sock.recvfrom(1024)
+                    print('received {} bytes from {}'.format(len(data), address))
+                    self.collected.emit(data)
+                #data, address = sock.recvfrom(1024)
+                #print('received {} bytes from {}'.format(len(data), address))
                 #time.sleep(0.05)
-                self.collected.emit(data)
+                #self.collected.emit(data)
             except BlockingIOError:
-                #print("Not available, trying again...")
+                print("Not available, trying again...")
                 #time.sleep(1)
                 pass
                 
