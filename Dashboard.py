@@ -3,6 +3,7 @@ from PySide6.QtCore import Qt, QObject, Signal, Slot, QThread
 
 import socket
 import time
+from fdp import ForzaDataPacket
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.setblocking(0)
@@ -10,7 +11,7 @@ sock.bind(('', 1337))
 
 class Worker(QObject):
     finished = Signal()
-    intReady = Signal(str)
+    collected = Signal(bytes)
 
     @Slot()
     def __init__(self):
@@ -22,12 +23,12 @@ class Worker(QObject):
             try:
                 data, address = sock.recvfrom(1024)
                 print('received {} bytes from {}'.format(len(data), address))
-                # time.sleep(0.05)
-                data2 = data.decode('utf-8')
-                self.intReady.emit(data2)
+                #time.sleep(0.05)
+                self.collected.emit(data)
             except BlockingIOError:
-                print("Not available, trying again...")
-                time.sleep(1)
+                #print("Not available, trying again...")
+                #time.sleep(1)
+                pass
                 
 
         self.finished.emit()
@@ -75,8 +76,12 @@ class Dashboard(QtWidgets.QWidget):
     def loop_finished(self):
         print("Finished listening")
     
-    def onintready(self, data2):
+    def onCollected(self, data):
         print("Received Data")
+        fdp = ForzaDataPacket(data)
+        if fdp.is_race_on:
+            self.gearIndicator.display(fdp.gear)
+
     
     @Slot()
     def toggle_loop(self, checked):
@@ -92,7 +97,7 @@ class Dashboard(QtWidgets.QWidget):
             # move the worker into the thread, do this first before connecting the signals
             self.thread.started.connect(self.worker.work)
             # begin our worker object's loop when the thread starts running
-            self.worker.intReady.connect(self.onintready)
+            self.worker.collected.connect(self.onCollected)
             self.worker.finished.connect(self.loop_finished)  # do something in the gui when the worker loop ends
             #self.pushButton_2.clicked.connect(self.stop_loop)  # stop the loop on the stop button click
 
