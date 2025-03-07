@@ -1,0 +1,15 @@
+GearIndicator#gearIndicator[change=true] {
+    background-color: red;
+}
+
+GearIndicator#gearIndicator[stay=true] {
+    background-color: white;
+}
+
+GearIndicator#gearIndicator[ready=true] {
+    background-color: yellow;
+}
+
+GearIndicator#gearIndicator {
+    
+}

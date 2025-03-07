@@ -6,6 +6,13 @@ import time
 from fdp import ForzaDataPacket
 import select
 
+from enum import Enum
+
+class GearChange(Enum):
+    STAY = 1
+    READY = 2
+    CHANGE = 3
+
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.setblocking(0)
 sock.bind(('', 1337))
@@ -48,6 +55,24 @@ class GearIndicator(QtWidgets.QLCDNumber):
     
     def initWidget(self):
         self.display(0)
+    
+    def changeState(self, state: GearChange):
+        if state == GearChange.CHANGE:
+            self.setProperty("change", True)
+            self.setProperty("stay", False)
+            self.setProperty("ready", False)
+        
+        if state == GearChange.READY:
+            self.setProperty("change", False)
+            self.setProperty("stay", False)
+            self.setProperty("ready", True)
+        
+        if state == GearChange.STAY:
+            self.setProperty("change", False)
+            self.setProperty("stay", True)
+            self.setProperty("ready", False)
+        
+        self.style().polish(self)
 
 
 class Dashboard(QtWidgets.QWidget):
@@ -68,15 +93,10 @@ class Dashboard(QtWidgets.QWidget):
         self.listenButton.clicked.connect(self.toggle_loop)
 
         self.gearIndicator = GearIndicator()
-
-        self.slider = QtWidgets.QSlider(Qt.Horizontal)
-        self.slider.setMaximum(7)
-        self.slider.setMinimum(0)
-        self.slider.valueChanged.connect(self.gearIndicator.display)
+        self.gearIndicator.setObjectName("gearIndicator")
 
         layout = QtWidgets.QVBoxLayout(self)
         layout.addWidget(self.gearIndicator)
-        layout.addWidget(self.slider)
         layout.addWidget(self.listenButton)
         self.setLayout(layout)
     
@@ -88,6 +108,13 @@ class Dashboard(QtWidgets.QWidget):
         fdp = ForzaDataPacket(data)
         if fdp.is_race_on:
             self.gearIndicator.display(fdp.gear)
+
+            if fdp.current_engine_rpm / fdp.engine_max_rpm >= 0.8:
+                self.gearIndicator.changeState(GearChange.CHANGE)
+            elif fdp.current_engine_rpm / fdp.engine_max_rpm >= 0.75 and fdp.current_engine_rpm / fdp.engine_max_rpm < 0.8:
+                self.gearIndicator.changeState(GearChange.READY)
+            else:
+                self.gearIndicator.changeState(GearChange.STAY)
 
     
     @Slot()
