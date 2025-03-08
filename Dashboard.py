@@ -9,7 +9,7 @@ import select
 from enum import Enum
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.setblocking(0)
+sock.setblocking(0)  # Set to non blocking, so thread can be terminated without socket blocking forever
 sock.bind(('', 1337))
 timeout = 2
 
@@ -76,12 +76,41 @@ class GearIndicator(QtWidgets.QLCDNumber):
         self.style().polish(self)
 
 
+"""A compund widget that simply Displays the name of a parameter, and the value of
+that parameter below it. Eg. tire_temp_FL display the tempatarure
+of the front left tire. They can be simply organised vertically
+or horizontally, like blocks.
+
+paramName: The configuration name of the parameter
+paramLabel: The user-friendly label for the widget
+paramValue: The value the parameter currently holds"""
+class ParamWidget(QtWidgets.QFrame):
+    def __init__(self, paramName: str, paramLabel: str, paramValue = "0"):
+        super().__init__()
+
+        self.paramName = paramName
+        self.paramLabel = QtWidgets.QLabel(paramLabel)
+        self.paramValue = QtWidgets.QLabel(paramValue)
+
+        self.initWidget()
+
+    def initWidget(self):
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(self.paramLabel)
+        layout.addWidget(self.paramValue)
+        self.setLayout(layout)
+
+
 class Dashboard(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
 
         self.worker = None
         self.thread = None
+        self.paramDict = {}
+
+        # A dict of DisplayWidgets, used to quickly update each widget with the latest value
+        self.paramDict = {}
 
         self.initWidget()
 
@@ -96,13 +125,34 @@ class Dashboard(QtWidgets.QWidget):
         self.gearIndicator = GearIndicator()
         self.gearIndicator.setObjectName("gearIndicator")
 
+        self.racePos = ParamWidget("race_pos", "Position")
+        self.fuel = ParamWidget("fuel", "Fuel")
+        self.boost = ParamWidget("boost", "Boost")
+        self.speed = ParamWidget("speed", "Speed")
+        self.paramDict["race_pos"] = self.racePos
+        self.paramDict["fuel"] = self.fuel
+        self.paramDict["boost"] = self.boost
+        self.paramDict["speed"] = self.speed
+        
+        groupWidget = QtWidgets.QWidget()
+        groupLayout = QtWidgets.QHBoxLayout()
+        groupLayout.addWidget(self.racePos)
+        groupLayout.addWidget(self.fuel)
+        groupLayout.addWidget(self.boost)
+        groupLayout.addWidget(self.speed)
+        groupWidget.setLayout(groupLayout)
+
         layout = QtWidgets.QVBoxLayout(self)
         layout.addWidget(self.gearIndicator)
+        layout.addWidget(groupWidget)
         layout.addWidget(self.listenButton)
         self.setLayout(layout)
     
     def loop_finished(self):
         print("Finished listening")
+    
+    def updateParamWidgets():
+        pass
     
     def onCollected(self, data):
         print("Received Data")
@@ -116,6 +166,11 @@ class Dashboard(QtWidgets.QWidget):
                 self.gearIndicator.changeState(GearIndicator.GearChange.READY)
             else:
                 self.gearIndicator.changeState(GearIndicator.GearChange.STAY)
+            
+            self.racePos.paramValue.setText(str(fdp.race_pos))
+            self.fuel.paramValue.setText(str(fdp.fuel))
+            self.boost.paramValue.setText("{:.2f}".format(fdp.boost))
+            self.speed.paramValue.setText("{:.2f}".format(fdp.speed * 2.24))
 
     
     @Slot()

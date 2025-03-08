@@ -11,5 +11,9 @@ GearIndicator#gearIndicator[ready=true] {
 }
 
 GearIndicator#gearIndicator {
-    
+    width: 50px;
+}
+
+ParamWidget {
+    border: 1px solid black;
 }
