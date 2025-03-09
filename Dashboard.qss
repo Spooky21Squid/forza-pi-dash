@@ -1,3 +1,12 @@
+Dashboard {
+    background-color: black;
+    padding: 0px;
+}
+
+GearIndicator {
+    background-color: white;
+}
+
 GearIndicator#gearIndicator[change=true] {
     background-color: red;
 }
@@ -11,9 +20,28 @@ GearIndicator#gearIndicator[ready=true] {
 }
 
 GearIndicator#gearIndicator {
-    width: 50px;
+    margin: 0 300px 0 300px;
+    border: 0;
 }
 
 ParamWidget {
     border: 1px solid black;
+}
+
+QLabel {
+    background: grey;
+    font-size: 20pt;
+}
+
+TireSlipWidget {
+    background-color: white;
+    border-radius: 0px;
+}
+
+TireSlipWidget::chunk {
+    background-color: #7d4ccc;
+}
+
+QPushButton {
+    background-color: blue;
 }

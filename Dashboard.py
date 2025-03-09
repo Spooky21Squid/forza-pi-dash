@@ -1,5 +1,6 @@
 from PySide6 import QtWidgets
 from PySide6.QtCore import Qt, QObject, Signal, Slot, QThread
+from ParamWidgets import TireSlipWidget
 
 import socket
 import time
@@ -95,13 +96,15 @@ class ParamWidget(QtWidgets.QFrame):
         self.initWidget()
 
     def initWidget(self):
+        self.paramLabel.setAlignment(Qt.AlignCenter)
+        self.paramValue.setAlignment(Qt.AlignCenter)
         layout = QtWidgets.QVBoxLayout(self)
         layout.addWidget(self.paramLabel)
         layout.addWidget(self.paramValue)
         self.setLayout(layout)
 
 
-class Dashboard(QtWidgets.QWidget):
+class Dashboard(QtWidgets.QFrame):
     def __init__(self):
         super().__init__()
 
@@ -119,37 +122,62 @@ class Dashboard(QtWidgets.QWidget):
         self.resize(800, 480)
 
         self.listenButton = QtWidgets.QPushButton()
+        self.slipRL = TireSlipWidget()
+        self.slipRR = TireSlipWidget()
+        self.gearIndicator = GearIndicator()
+        self.groupWidget = QtWidgets.QWidget()
+        self.centreWidget = QtWidgets.QFrame()
+
+        self.slip = ParamWidget("tire_slip_ratio_RL", "RL Slip")
+        self.fuel = ParamWidget("fuel", "Fuel")
+        self.distance = ParamWidget("dist_traveled", "Distance")
+        self.speed = ParamWidget("speed", "Speed")
+
         self.listenButton.setCheckable(True)  # make toggleable
         self.listenButton.clicked.connect(self.toggle_loop)
 
-        self.gearIndicator = GearIndicator()
         self.gearIndicator.setObjectName("gearIndicator")
 
-        self.racePos = ParamWidget("race_pos", "Position")
-        self.fuel = ParamWidget("fuel", "Fuel")
-        self.boost = ParamWidget("boost", "Boost")
-        self.speed = ParamWidget("speed", "Speed")
-        self.paramDict["race_pos"] = self.racePos
+        self.paramDict["race_pos"] = self.slip
         self.paramDict["fuel"] = self.fuel
-        self.paramDict["boost"] = self.boost
+        self.paramDict["Distance"] = self.distance
         self.paramDict["speed"] = self.speed
         
-        groupWidget = QtWidgets.QWidget()
         groupLayout = QtWidgets.QHBoxLayout()
-        groupLayout.addWidget(self.racePos)
+        groupLayout.addWidget(self.slip)
         groupLayout.addWidget(self.fuel)
-        groupLayout.addWidget(self.boost)
+        groupLayout.addWidget(self.distance)
         groupLayout.addWidget(self.speed)
-        groupWidget.setLayout(groupLayout)
+        groupLayout.setSpacing(0)
+        groupLayout.setContentsMargins(0,0,0,0)
+        self.groupWidget.setLayout(groupLayout)
 
-        layout = QtWidgets.QVBoxLayout(self)
-        layout.addWidget(self.gearIndicator)
-        layout.addWidget(groupWidget)
-        layout.addWidget(self.listenButton)
-        self.setLayout(layout)
+        centreLayout = QtWidgets.QVBoxLayout(self)
+        centreLayout.addWidget(self.gearIndicator)
+        centreLayout.addWidget(self.groupWidget)
+        centreLayout.addWidget(self.slipRL)
+        centreLayout.addWidget(self.listenButton)
+        centreLayout.setSpacing(0)
+        centreLayout.setContentsMargins(0,0,0,0)
+        self.centreWidget.setLayout(centreLayout)
+
+        mainLayout = QtWidgets.QHBoxLayout(self)
+        mainLayout.addWidget(self.slipRL)
+        mainLayout.addWidget(self.centreWidget)
+        mainLayout.addWidget(self.slipRR)
+        mainLayout.setSpacing(0)
+        mainLayout.setContentsMargins(0,0,0,0)
+        self.setLayout(mainLayout)
+
+        # Just to test
+        self.slipRL.setValue(50)
     
     def loop_finished(self):
         print("Finished listening")
+
+        ## Reset the tire slip indicator bars
+        self.slipRR.reset()
+        self.slipRL.reset()
     
     def updateParamWidgets():
         pass
@@ -167,10 +195,14 @@ class Dashboard(QtWidgets.QWidget):
             else:
                 self.gearIndicator.changeState(GearIndicator.GearChange.STAY)
             
-            self.racePos.paramValue.setText(str(fdp.race_pos))
+            self.slip.paramValue.setText("{:.2f}".format(fdp.tire_combined_slip_RL))
             self.fuel.paramValue.setText(str(fdp.fuel))
-            self.boost.paramValue.setText("{:.2f}".format(fdp.boost))
+            self.distance.paramValue.setText("{:.2f}".format(fdp.dist_traveled))
             self.speed.paramValue.setText("{:.2f}".format(fdp.speed * 2.24))
+
+            # Update the tire slip indicators
+            self.slipRL.setValue(int(fdp.tire_combined_slip_RL * 10))
+            self.slipRR.setValue(int(fdp.tire_combined_slip_RR * 10))
 
     
     @Slot()
