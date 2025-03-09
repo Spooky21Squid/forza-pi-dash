@@ -1,0 +1,38 @@
+# ------------------------------------------------------------------
+# This is the configration file for the forza-pi-dash dashboard.
+# The dashboard will edit this file itself via the settings, so there
+# is no need to edit this file directly. Nevertheless, it will be
+# explained below. Please don't delete this file - the dashboard
+# will not run without it.
+# ------------------------------------------------------------------
+
+# port: The port that Forza should send the data to. This should match
+# the port in the game, and should be between 1024 and 65535
+
+# units: either 'imperial' or 'metric' depending on user preference
+
+# redlinePercent: The % of engine_max_rpm that current_engine_rpm needs
+# to be for the gear indicator to turn red
+
+# readyPercent: The % of engine_max_rpm that current_engine_rpm needs
+# to be for the gear indicator to turn yellow
+
+# pitWarning: Can be True or False. Controls whether the large centre
+# red and yellow pit warning will flash when low on fuel. Note the
+# smaller warning inside the fuel portion of the dash will always function.
+
+# parameterList: A list of up to 4 parameters that directly translate
+# to the parameters output by Forza, and displayed as part of the customisable
+# 4-widget centre portion of the dash. Valid options for these parameters
+# can be found in 'configuration_file.md'
+
+port: 1337
+units: imperial
+redlinePercent: 85
+readyPercent: 75
+pitWarning: True
+parameterList:
+  - speed
+  - boost
+  - power
+  - tire_wear_FL

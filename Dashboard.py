@@ -6,6 +6,8 @@ import socket
 import time
 from fdp import ForzaDataPacket
 import select
+import yaml
+import typing
 
 from enum import Enum
 
@@ -13,6 +15,24 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.setblocking(0)  # Set to non blocking, so thread can be terminated without socket blocking forever
 sock.bind(('', 1337))
 timeout = 2
+
+"""Holds the configuration options and preferences for the dashboard that adjust
+things like units (metric, imperial), redline % etc. These are held in an external
+yaml configuration file which is read and used to update the config object
+either when the program is first started, or when the user changes and closes
+the settings widget.
+"""
+dashConfig: dict = None
+dashConfigFilePath = "dashboardConfig.yaml"
+
+"""Reads the dashboard config file and updates the config
+settings in dashConfig
+"""
+def updateDashConfig(configFile: str):
+    global dashConfig
+    with open(configFile) as f:
+        dashConfig = yaml.safe_load(f)
+
 
 class Worker(QObject):
     finished = Signal()
@@ -58,6 +78,7 @@ class GearIndicator(QtWidgets.QLCDNumber):
         READY = 2
         CHANGE = 3
     
+    #@Slot(GearChange)
     def changeState(self, state: GearChange):
         if state == self.GearChange.CHANGE:
             self.setProperty("change", True)
@@ -110,16 +131,30 @@ class Dashboard(QtWidgets.QFrame):
 
         self.worker = None
         self.thread = None
-        self.paramDict = {}
 
-        # A dict of DisplayWidgets, used to quickly update each widget with the latest value
         self.paramDict = {}
 
         self.initWidget()
 
     
     def initWidget(self):
-        self.resize(800, 480)
+
+        # Tries to read the dashboard config file. If unsuccessful, widgets are
+        # responsible for falling back to a suitable default eg. imperial units
+        try:
+            updateDashConfig(dashConfigFilePath)
+
+            # Populate the customsable parameter widgets with the parameters from
+            # the config file
+            if 'parameterList' in dashConfig:
+                for p in dashConfig['parameterList']:
+                    pName = p.replace("_", " ")
+                    self.paramDict[p] = ParamWidget(p, pName)
+        
+        except:
+            print("Unable to open config dash file, reverting to defaults.")
+                
+        self.resize(800, 480)  # Raspberry Pi touchscreen resolution
 
         self.listenButton = QtWidgets.QPushButton()
         self.slipRL = TireSlipWidget()
@@ -128,26 +163,16 @@ class Dashboard(QtWidgets.QFrame):
         self.groupWidget = QtWidgets.QWidget()
         self.centreWidget = QtWidgets.QFrame()
 
-        self.slip = ParamWidget("tire_slip_ratio_RL", "RL Slip")
-        self.fuel = ParamWidget("fuel", "Fuel")
-        self.distance = ParamWidget("dist_traveled", "Distance")
-        self.speed = ParamWidget("speed", "Speed")
-
         self.listenButton.setCheckable(True)  # make toggleable
         self.listenButton.clicked.connect(self.toggle_loop)
 
         self.gearIndicator.setObjectName("gearIndicator")
-
-        self.paramDict["race_pos"] = self.slip
-        self.paramDict["fuel"] = self.fuel
-        self.paramDict["Distance"] = self.distance
-        self.paramDict["speed"] = self.speed
         
         groupLayout = QtWidgets.QHBoxLayout()
-        groupLayout.addWidget(self.slip)
-        groupLayout.addWidget(self.fuel)
-        groupLayout.addWidget(self.distance)
-        groupLayout.addWidget(self.speed)
+
+        for w in self.paramDict.values():
+            groupLayout.addWidget(w)
+        
         groupLayout.setSpacing(0)
         groupLayout.setContentsMargins(0,0,0,0)
         self.groupWidget.setLayout(groupLayout)
@@ -195,16 +220,17 @@ class Dashboard(QtWidgets.QFrame):
             else:
                 self.gearIndicator.changeState(GearIndicator.GearChange.STAY)
             
-            self.slip.paramValue.setText("{:.2f}".format(fdp.tire_combined_slip_RL))
-            self.fuel.paramValue.setText(str(fdp.fuel))
-            self.distance.paramValue.setText("{:.2f}".format(fdp.dist_traveled))
-            self.speed.paramValue.setText("{:.2f}".format(fdp.speed * 2.24))
+            #self.slip.paramValue.setText("{:.2f}".format(fdp.tire_combined_slip_RL))
+            #self.fuel.paramValue.setText(str(fdp.fuel))
+            #self.distance.paramValue.setText("{:.2f}".format(fdp.dist_traveled))
+            #self.speed.paramValue.setText("{:.2f}".format(fdp.speed * 2.24))
 
             # Update the tire slip indicators
             self.slipRL.setValue(int(fdp.tire_combined_slip_RL * 10))
             self.slipRR.setValue(int(fdp.tire_combined_slip_RR * 10))
 
-    
+    """ Starts/stops listening for Forza UDP packets
+    """
     @Slot()
     def toggle_loop(self, checked):
         if not checked:
@@ -219,6 +245,8 @@ class Dashboard(QtWidgets.QFrame):
             # move the worker into the thread, do this first before connecting the signals
             self.thread.started.connect(self.worker.work)
             # begin our worker object's loop when the thread starts running
+            
+            # CONNECT TO EACH WIDGETS UPDATE SLOT INSTEAD
             self.worker.collected.connect(self.onCollected)
             self.worker.finished.connect(self.loop_finished)  # do something in the gui when the worker loop ends
             #self.pushButton_2.clicked.connect(self.stop_loop)  # stop the loop on the stop button click
