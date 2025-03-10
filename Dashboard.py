@@ -155,6 +155,7 @@ class Dashboard(QtWidgets.QFrame):
             print("Unable to open config param file, reverting to defaults.")
                 
         self.resize(800, 480)  # Raspberry Pi touchscreen resolution
+        self.maximumSize()
 
         self.listenButton = QtWidgets.QPushButton()
         self.slipRL = TireSlipWidget()
@@ -168,7 +169,7 @@ class Dashboard(QtWidgets.QFrame):
 
         self.gearIndicator.setObjectName("gearIndicator")
         
-        groupLayout = QtWidgets.QHBoxLayout()
+        groupLayout = QtWidgets.QVBoxLayout()
 
         for w in self.paramDict.values():
             groupLayout.addWidget(w)
@@ -180,7 +181,6 @@ class Dashboard(QtWidgets.QFrame):
         centreLayout = QtWidgets.QVBoxLayout(self)
         centreLayout.addWidget(self.gearIndicator)
         centreLayout.addWidget(self.groupWidget)
-        centreLayout.addWidget(self.slipRL)
         centreLayout.addWidget(self.listenButton)
         centreLayout.setSpacing(0)
         centreLayout.setContentsMargins(0,0,0,0)
@@ -227,13 +227,17 @@ class Dashboard(QtWidgets.QFrame):
             for p, w in self.paramDict.items():
                 w: ParamWidget
                 val = getattr(fdp, p, 0)
+                dp = 2
                 
                 if p in paramConfig:
-                    config = paramConfig[p]
+                    config: dict = paramConfig[p]
                     units: str = dashConfig["units"]
                     if "units" in config:
                         if units in config["units"]:
                             val *= config["factor"][units]
+                    dp = config.get("dp", 2)  # Decimal places is 2 if not specified
+                fs = "{:." + str(dp) + "f}"
+                val = fs.format(val)
                 w.update(val)
 
             # Update the tire slip indicators
