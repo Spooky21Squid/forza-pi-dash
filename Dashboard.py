@@ -131,29 +131,35 @@ class Dashboard(QtWidgets.QFrame):
     
     def initWidget(self):
 
+        try:
+            updateParamConfig(paramConfigFilePath)
+        except:
+            print("Unable to open config param file, reverting to defaults.")
+
         # Tries to read the dashboard config file. If unsuccessful, widgets will
         # fall back to the default units sent by Forza
         try:
             updateDashConfig(dashConfigFilePath)
 
-            # Populate the customsable parameter widgets with the parameters from
+            # Populate the customisable parameter widgets with the parameters from
             # the config file
             if 'parameterList' in dashConfig:
                 count = 1
                 for p in dashConfig['parameterList']:
+                    p: dict
                     if count > 4:  # Any more parameters will be ignored
                         break
-                    pName = p.replace("_", " ")
+                    if paramConfig:
+                        pName = paramConfig.get(p).get("label")
+                    #pName = p.replace("_", " ")
                     self.paramDict[p] = ParamWidget(p, pName)
+                    count += 1
+                while count <= 4:
+                    self.paramDict[str(count)] = ParamWidget("", "", "")  # Populate the rest of the grid with blank widgets
                     count += 1
         except:
             print("Unable to open config dash file, reverting to defaults.")
-        
-        try:
-            updateParamConfig(paramConfigFilePath)
-        except:
-            print("Unable to open config param file, reverting to defaults.")
-                
+
         self.resize(800, 480)  # Raspberry Pi touchscreen resolution
 
         self.listenButton = QtWidgets.QPushButton("Start")
