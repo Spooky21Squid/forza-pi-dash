@@ -168,6 +168,8 @@ class Dashboard(QtWidgets.QFrame):
         self.lastLapTimeWidget = ParamWidget("last_lap_time", "Last")
         self.bestLapTimeWidget = ParamWidget("best_lap_time", "Best")
         self.interval = QtWidgets.QLabel("0.000")  # Calculated interval estimate
+        self.interval.setProperty("style", True)
+        self.interval.setAlignment(Qt.AlignCenter)
         self.fuelWidget = QtWidgets.QFrame()
 
         # Two buttons top left

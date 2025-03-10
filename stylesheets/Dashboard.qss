@@ -26,9 +26,15 @@ ParamWidget {
     border-radius: 15px;
 }
 
+QLabel[style=true] {
+    border: 1px solid white;
+    border-radius: 15px;
+}
+
 QLabel {
-    background: grey;
-    /*font-size: 20pt;*/
+    /*background: grey;*/
+    font-size: 18pt;
+    color: white;
 }
 
 TireSlipWidget {
