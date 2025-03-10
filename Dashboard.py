@@ -16,22 +16,41 @@ sock.setblocking(0)  # Set to non blocking, so thread can be terminated without 
 sock.bind(('', 1337))
 timeout = 2
 
-"""Holds the configuration options and preferences for the dashboard that adjust
+"""
+Holds the configuration options and preferences for the dashboard that adjust
 things like units (metric, imperial), redline % etc. These are held in an external
 yaml configuration file which is read and used to update the config object
 either when the program is first started, or when the user changes and closes
 the settings widget.
 """
 dashConfig: dict = None
-dashConfigFilePath = "dashboardConfig.yaml"
+dashConfigFilePath = "config/dashboardConfig.yaml"
 
-"""Reads the dashboard config file and updates the config
-settings in dashConfig
 """
+Holds possible parameters names, units and conversion factors. Is updated
+once when the program starts, or when the user changes and closes the
+settings widget.
+"""
+paramConfig: dict = None
+paramConfigFilePath = "config/paramConfig.yaml"
+
 def updateDashConfig(configFile: str):
+    """
+    Reads the dashboard config file and updates the config
+    settings in dashConfig
+    """
     global dashConfig
     with open(configFile) as f:
         dashConfig = yaml.safe_load(f)
+
+def updateParamConfig(configFile: str):
+    """
+    Reads the param config file and updates the config
+    settings in paramConfig
+    """
+    global paramConfig
+    with open(configFile) as f:
+        paramConfig = yaml.safe_load(f)
 
 
 class Worker(QObject):
@@ -112,20 +131,28 @@ class Dashboard(QtWidgets.QFrame):
     
     def initWidget(self):
 
-        # Tries to read the dashboard config file. If unsuccessful, widgets are
-        # responsible for falling back to a suitable default eg. imperial units
+        # Tries to read the dashboard config file. If unsuccessful, widgets will
+        # fall back to the default units sent by Forza
         try:
             updateDashConfig(dashConfigFilePath)
 
             # Populate the customsable parameter widgets with the parameters from
             # the config file
             if 'parameterList' in dashConfig:
+                count = 1
                 for p in dashConfig['parameterList']:
+                    if count > 4:  # Any more parameters will be ignored
+                        break
                     pName = p.replace("_", " ")
                     self.paramDict[p] = ParamWidget(p, pName)
-        
+                    count += 1
         except:
             print("Unable to open config dash file, reverting to defaults.")
+        
+        try:
+            updateParamConfig(paramConfigFilePath)
+        except:
+            print("Unable to open config param file, reverting to defaults.")
                 
         self.resize(800, 480)  # Raspberry Pi touchscreen resolution
 
@@ -192,10 +219,22 @@ class Dashboard(QtWidgets.QFrame):
             else:
                 self.gearIndicator.changeState(GearIndicator.GearChange.STAY)
             
-            #self.slip.paramValue.setText("{:.2f}".format(fdp.tire_combined_slip_RL))
-            #self.fuel.paramValue.setText(str(fdp.fuel))
-            #self.distance.paramValue.setText("{:.2f}".format(fdp.dist_traveled))
-            #self.speed.paramValue.setText("{:.2f}".format(fdp.speed * 2.24))
+            
+            # Update the customisable widgets
+            # Matches the user's chosen units (imperial, metric etc) to values stored
+            # in the param config file and does any conversions or formatting before
+            # sending the value to the widget to display
+            for p, w in self.paramDict.items():
+                w: ParamWidget
+                val = getattr(fdp, p, 0)
+                
+                if p in paramConfig:
+                    config = paramConfig[p]
+                    units: str = dashConfig["units"]
+                    if "units" in config:
+                        if units in config["units"]:
+                            val *= config["factor"][units]
+                w.update(val)
 
             # Update the tire slip indicators
             self.slipRL.setValue(int(fdp.tire_combined_slip_RL * 10))

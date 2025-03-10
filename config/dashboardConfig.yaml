@@ -27,12 +27,16 @@
 # can be found in 'configuration_file.md'
 
 port: 1337
+unitOptions:
+  - default
+  - imperial
+  - metric
 units: imperial
 redlinePercent: 85
 readyPercent: 75
 pitWarning: True
 parameterList:
-  - speed
+  - dist_traveled
   - boost
   - power
   - tire_wear_FL
