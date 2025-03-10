@@ -5,6 +5,8 @@ Dashboard {
 
 GearIndicator {
     background-color: white;
+    /*margin: 0 300px 0 300px;*/
+    border: 0;
 }
 
 GearIndicator#gearIndicator[change=true] {
@@ -19,18 +21,14 @@ GearIndicator#gearIndicator[ready=true] {
     background-color: yellow;
 }
 
-GearIndicator#gearIndicator {
-    margin: 0 300px 0 300px;
-    border: 0;
-}
-
 ParamWidget {
-    border: 1px solid black;
+    border: 1px solid white;
+    border-radius: 15px;
 }
 
 QLabel {
     background: grey;
-    font-size: 20pt;
+    /*font-size: 20pt;*/
 }
 
 TireSlipWidget {

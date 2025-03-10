@@ -155,35 +155,51 @@ class Dashboard(QtWidgets.QFrame):
             print("Unable to open config param file, reverting to defaults.")
                 
         self.resize(800, 480)  # Raspberry Pi touchscreen resolution
-        self.maximumSize()
 
         self.listenButton = QtWidgets.QPushButton()
+        self.settingsButton = QtWidgets.QPushButton()
+        self.positionWidget = ParamWidget("race_pos", "Pos")
+        self.lapWidget = ParamWidget("lap_no", "Lap")
         self.slipRL = TireSlipWidget()
         self.slipRR = TireSlipWidget()
         self.gearIndicator = GearIndicator()
-        self.groupWidget = QtWidgets.QWidget()
         self.centreWidget = QtWidgets.QFrame()
+        self.tireWidget = QtWidgets.QFrame()
+        self.lastLapTimeWidget = ParamWidget("last_lap_time", "Last")
+        self.bestLapTimeWidget = ParamWidget("best_lap_time", "Best")
+        self.interval = QtWidgets.QLabel("0.000")  # Calculated interval estimate
+        self.fuelWidget = QtWidgets.QFrame()
 
+        # Two buttons top left
         self.listenButton.setCheckable(True)  # make toggleable
         self.listenButton.clicked.connect(self.toggle_loop)
-
+        self.distanceWidget = ParamWidget("dist_traveled", "Dist")
         self.gearIndicator.setObjectName("gearIndicator")
-        
-        groupLayout = QtWidgets.QVBoxLayout()
 
+        centreLayout = QtWidgets.QGridLayout()
+
+        # Left side
+        centreLayout.addWidget(self.listenButton, 0, 0)
+        centreLayout.addWidget(self.settingsButton, 0, 1)
+        centreLayout.addWidget(self.positionWidget, 1, 0)
+        centreLayout.addWidget(self.lapWidget, 1, 1)
+        centreLayout.addWidget(self.distanceWidget, 2, 0, 1, 2)
+        centreLayout.addWidget(self.tireWidget, 3, 0, -1, 2)
+
+        # Centre
+        centreLayout.addWidget(self.gearIndicator, 0, 2, 3, 1)
+        row = 3
         for w in self.paramDict.values():
-            groupLayout.addWidget(w)
-        
-        groupLayout.setSpacing(0)
-        groupLayout.setContentsMargins(0,0,0,0)
-        self.groupWidget.setLayout(groupLayout)
+            centreLayout.addWidget(w, row, 2)
+            row += 1
+        del row
 
-        centreLayout = QtWidgets.QVBoxLayout(self)
-        centreLayout.addWidget(self.gearIndicator)
-        centreLayout.addWidget(self.groupWidget)
-        centreLayout.addWidget(self.listenButton)
-        centreLayout.setSpacing(0)
-        centreLayout.setContentsMargins(0,0,0,0)
+        # Right Side
+        centreLayout.addWidget(self.lastLapTimeWidget, 0, 3, 1, 2)
+        centreLayout.addWidget(self.bestLapTimeWidget, 1, 3, 1, 2)
+        centreLayout.addWidget(self.interval, 2, 3, 1, 2)
+        centreLayout.addWidget(self.fuelWidget, 3, 3, -1, -1)
+
         self.centreWidget.setLayout(centreLayout)
 
         mainLayout = QtWidgets.QHBoxLayout(self)
