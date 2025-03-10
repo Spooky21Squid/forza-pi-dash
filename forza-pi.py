@@ -8,9 +8,15 @@ def run():
     db = Dashboard()
     db.show()
 
-    with open("Dashboard.qss", "r") as f:
-        _style = f.read()
-        app.setStyleSheet(_style)
+    # Add multiple stylesheets in the order they need to be concatonated
+    stylesheets = ["stylesheets/Dashboard.qss"]
+    style = ""
+
+    for sheet in stylesheets:
+        with open(sheet, "r") as f:
+            style += f.read() + "\n\n"
+    
+    app.setStyleSheet(style)
 
     sys.exit(app.exec())
 
