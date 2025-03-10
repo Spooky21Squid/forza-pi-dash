@@ -21,18 +21,12 @@ GearIndicator#gearIndicator[ready=true] {
     background-color: yellow;
 }
 
-ParamWidget {
-    border: 1px solid white;
+ParamWidget, QPushButton, QLabel[style=true] {
+    border: 2px solid white;
     border-radius: 15px;
 }
 
-QLabel[style=true] {
-    border: 1px solid white;
-    border-radius: 15px;
-}
-
-QLabel {
-    /*background: grey;*/
+QLabel, QPushButton {
     font-size: 18pt;
     color: white;
 }
@@ -44,8 +38,4 @@ TireSlipWidget {
 
 TireSlipWidget::chunk {
     background-color: #7d4ccc;
-}
-
-QPushButton {
-    background-color: blue;
 }

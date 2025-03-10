@@ -156,27 +156,33 @@ class Dashboard(QtWidgets.QFrame):
                 
         self.resize(800, 480)  # Raspberry Pi touchscreen resolution
 
-        self.listenButton = QtWidgets.QPushButton()
-        self.settingsButton = QtWidgets.QPushButton()
+        self.listenButton = QtWidgets.QPushButton("Start")
+        self.listenButton.setCheckable(True)  # make toggleable
+        self.listenButton.clicked.connect(self.toggle_loop)
+        self.listenButton.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
+        
+        self.settingsButton = QtWidgets.QPushButton("Settings")
+        self.settingsButton.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
+
         self.positionWidget = ParamWidget("race_pos", "Pos")
         self.lapWidget = ParamWidget("lap_no", "Lap")
+        self.distanceWidget = ParamWidget("dist_traveled", "Dist")
         self.slipRL = TireSlipWidget()
         self.slipRR = TireSlipWidget()
+
         self.gearIndicator = GearIndicator()
+        self.gearIndicator.setObjectName("gearIndicator")
+
         self.centreWidget = QtWidgets.QFrame()
         self.tireWidget = QtWidgets.QFrame()
         self.lastLapTimeWidget = ParamWidget("last_lap_time", "Last")
         self.bestLapTimeWidget = ParamWidget("best_lap_time", "Best")
+
         self.interval = QtWidgets.QLabel("0.000")  # Calculated interval estimate
         self.interval.setProperty("style", True)
         self.interval.setAlignment(Qt.AlignCenter)
-        self.fuelWidget = QtWidgets.QFrame()
 
-        # Two buttons top left
-        self.listenButton.setCheckable(True)  # make toggleable
-        self.listenButton.clicked.connect(self.toggle_loop)
-        self.distanceWidget = ParamWidget("dist_traveled", "Dist")
-        self.gearIndicator.setObjectName("gearIndicator")
+        self.fuelWidget = QtWidgets.QFrame()
 
         centreLayout = QtWidgets.QGridLayout()
 
