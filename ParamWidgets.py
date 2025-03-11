@@ -117,3 +117,23 @@ class TireWidget(QtWidgets.QFrame):
 
         self.setLayout(layout)
 
+
+class FuelWidget(QtWidgets.QFrame):
+    def __init__(self):
+        super().__init__()
+        layout = QtWidgets.QVBoxLayout()
+
+        self.fuelLevel = ParamWidget("fuel", "Fuel Level")
+        self.fuelLevel.setObjectName("fuel")
+        self.fuelPerLap = ParamWidget("fpl", "Fuel Per Lap")
+        self.fuelPerLap.setObjectName("fuel")
+        self.lapsLeft = ParamWidget("lapsLeft", "Laps Left")
+        self.lapsLeft.setObjectName("fuel")
+        self.pitNow = QtWidgets.QLabel()
+
+        layout.addWidget(self.fuelLevel)
+        layout.addWidget(self.fuelPerLap)
+        layout.addWidget(self.lapsLeft)
+        layout.addWidget(self.pitNow)
+
+        self.setLayout(layout)

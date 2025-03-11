@@ -1,6 +1,6 @@
 from PySide6 import QtWidgets
 from PySide6.QtCore import Qt, QObject, Signal, Slot, QThread
-from ParamWidgets import TireSlipWidget, ParamWidget, AccelBrakeWidget, TireWidget
+from ParamWidgets import TireSlipWidget, ParamWidget, AccelBrakeWidget, TireWidget, FuelWidget
 
 import logging
 import socket
@@ -203,7 +203,7 @@ class Dashboard(QtWidgets.QFrame):
 
         self.tireWidget = TireWidget()
 
-        self.fuelWidget = QtWidgets.QFrame()
+        self.fuelWidget = FuelWidget()
 
         centreLayout = QtWidgets.QGridLayout()
         centreLayout.setSpacing(3)
@@ -359,14 +359,6 @@ class Dashboard(QtWidgets.QFrame):
                     #palette.setColor(widget.foregroundRole(), QColor(255, 255, 255))
                     widget.tireIcon.setStyleSheet("border: 3px solid green;")
 
-
-
-
-
-            
-
-
-
     def convertUnits(self, paramName: str, paramValue):
         """
         Converts a parameter from the default units to the current
@@ -385,7 +377,6 @@ class Dashboard(QtWidgets.QFrame):
         fs = "{:." + str(dp) + "f}"
         val = fs.format(paramValue)
         return val
-
 
     """ Starts/stops listening for Forza UDP packets
     """
