@@ -31,11 +31,23 @@ QLabel, QPushButton {
     color: white;
 }
 
-TireSlipWidget {
+QProgressBar {
     background-color: white;
     border-radius: 0px;
 }
 
 TireSlipWidget::chunk {
     background-color: #7d4ccc;
+}
+
+AccelBrakeWidget {
+    background-color: black;
+}
+
+AccelBrakeWidget#accelWidget::chunk {
+    background-color: green;
+}
+
+AccelBrakeWidget#brakeWidget::chunk {
+    background-color: red;
 }

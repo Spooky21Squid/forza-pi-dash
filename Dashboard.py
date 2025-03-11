@@ -1,6 +1,6 @@
 from PySide6 import QtWidgets
 from PySide6.QtCore import Qt, QObject, Signal, Slot, QThread
-from ParamWidgets import TireSlipWidget, ParamWidget
+from ParamWidgets import TireSlipWidget, ParamWidget, AccelBrakeWidget
 
 import socket
 import time
@@ -176,9 +176,22 @@ class Dashboard(QtWidgets.QFrame):
         self.distanceWidget = ParamWidget("dist_traveled", "Dist")
         self.slipRL = TireSlipWidget()
         self.slipRR = TireSlipWidget()
-
+        
+        # Central widget containing brake, gear and accel displays
+        self.gearAccelBrakeWidget = QtWidgets.QFrame()
+        gearAccelBrakeLayout = QtWidgets.QHBoxLayout()
+        gearAccelBrakeLayout.setSpacing(0)
+        gearAccelBrakeLayout.setContentsMargins(0,0,0,0)
+        self.accelWidget = AccelBrakeWidget()
+        self.accelWidget.setObjectName("accelWidget")
+        self.brakeWidget = AccelBrakeWidget()
+        self.brakeWidget.setObjectName("brakeWidget")
         self.gearIndicator = GearIndicator()
         self.gearIndicator.setObjectName("gearIndicator")
+        gearAccelBrakeLayout.addWidget(self.brakeWidget)
+        gearAccelBrakeLayout.addWidget(self.gearIndicator)
+        gearAccelBrakeLayout.addWidget(self.accelWidget)
+        self.gearAccelBrakeWidget.setLayout(gearAccelBrakeLayout)
 
         self.centreWidget = QtWidgets.QFrame()
         self.tireWidget = QtWidgets.QFrame()
@@ -202,7 +215,7 @@ class Dashboard(QtWidgets.QFrame):
         centreLayout.addWidget(self.tireWidget, 3, 0, -1, 2)
 
         # Centre
-        centreLayout.addWidget(self.gearIndicator, 0, 2, 3, 1)
+        centreLayout.addWidget(self.gearAccelBrakeWidget, 0, 2, 3, 1)
         row = 3
         for w in self.paramDict.values():
             centreLayout.addWidget(w, row, 2)
@@ -227,6 +240,8 @@ class Dashboard(QtWidgets.QFrame):
 
         # Just to test
         self.slipRL.setValue(50)
+        self.brakeWidget.setValue(50)
+        self.accelWidget.setValue(50)
     
     def loop_finished(self):
         print("Finished listening")
@@ -298,6 +313,10 @@ class Dashboard(QtWidgets.QFrame):
             seconds = seconds
             mseconds = (seconds - floor(seconds)) * 1000
             self.bestLapTimeWidget.update("{}:{}.{}".format(int(minutes), int(seconds), int(mseconds)))
+
+            # accel and brake progress bars
+            self.accelWidget.setValue(fdp.accel)
+            self.brakeWidget.setValue(fdp.brake)
 
 
 

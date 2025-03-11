@@ -56,3 +56,16 @@ class TireSlipWidget(QtWidgets.QProgressBar):
         self.setMinimum(5)
         self.setTextVisible(False)
         self.setOrientation(Qt.Vertical)
+
+
+class AccelBrakeWidget(QtWidgets.QProgressBar):
+    def __init__(self):
+        super().__init__()
+        self.initWidget()
+
+    def initWidget(self):
+        self.setMaximum(255)
+        self.setMinimum(0)
+        self.setTextVisible(False)
+        self.setOrientation(Qt.Vertical)
+        self.setFixedWidth(12)
