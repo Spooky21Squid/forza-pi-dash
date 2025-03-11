@@ -9,13 +9,23 @@
 # port: The port that Forza should send the data to. This should match
 # the port in the game, and should be between 1024 and 65535
 
-# units: either 'imperial' or 'metric' depending on user preference
+# unitOptions: The options for the type of units the dash can be set to. Includes
+# default, imperial and metric as standard, but users can add custom options if
+# they want finer control over the individual units of a parameter. (Note, the
+# paramConfig.yaml file also needs to be changed accordingly)
+
+# units: The currently chosen units
 
 # redlinePercent: The % of engine_max_rpm that current_engine_rpm needs
 # to be for the gear indicator to turn red
 
 # readyPercent: The % of engine_max_rpm that current_engine_rpm needs
 # to be for the gear indicator to turn yellow
+
+# tireTempBlue: The tire needs to be at or below this temperature to become blue
+# tireTempYellow: The tire needs to be at or above this temperature to become yellow
+# tireTempRed: The tire needs to be at or above this temperature to become red
+# Note that the temperature specified for each tire should be in the units the user has chosen.
 
 # pitWarning: Can be True or False. Controls whether the large centre
 # red and yellow pit warning will flash when low on fuel. Note the
@@ -34,9 +44,12 @@ unitOptions:
 units: imperial
 redlinePercent: 85
 readyPercent: 75
+tireTempBlue: 160
+tireTempYellow: 240
+tireTempRed: 330
 pitWarning: True
 parameterList:
   - dist_traveled
   - boost
   - power
-  - tire_wear_FL
+  - last_lap_time

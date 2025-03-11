@@ -1,6 +1,7 @@
 from PySide6 import QtWidgets
 from PySide6.QtCore import Qt, QObject, Signal, Slot, QThread
 from ParamWidgets import TireSlipWidget, ParamWidget, AccelBrakeWidget, TireWidget
+from PySide6.QtGui import QColor
 
 import socket
 import time
@@ -322,10 +323,48 @@ class Dashboard(QtWidgets.QFrame):
             self.brakeWidget.setValue(fdp.brake)
 
             # Tire wear and heat
-            self.tireWidget.fl.wear.setText("{}%".format(int(fdp.tire_wear_FL * 100)))
-            self.tireWidget.fr.wear.setText("{}%".format(int(fdp.tire_wear_FR * 100)))
-            self.tireWidget.rl.wear.setText("{}%".format(int(fdp.tire_wear_RL * 100)))
-            self.tireWidget.rr.wear.setText("{}%".format(int(fdp.tire_wear_RR * 100)))
+            #self.tireWidget.fl.wear.setText("{}%".format(int(fdp.tire_wear_FL * 100)))
+            #self.tireWidget.fr.wear.setText("{}%".format(int(fdp.tire_wear_FR * 100)))
+            #self.tireWidget.rl.wear.setText("{}%".format(int(fdp.tire_wear_RL * 100)))
+            #self.tireWidget.rr.wear.setText("{}%".format(int(fdp.tire_wear_RR * 100)))
+
+            tireWidgets = (
+                self.tireWidget.fl,
+                self.tireWidget.fr,
+                self.tireWidget.rl,
+                self.tireWidget.rr
+            )
+            
+            tireOrder = ("FL", "FR", "RL", "RR")
+
+            # get the tire temparature configs
+            blueTemp = dashConfig.get("tireTempBlue", 160)
+            yellowTemp = dashConfig.get("tireTempYellow", 240)
+            redTemp = dashConfig.get("tireTempRed", 330)
+            
+            for tire, widget in zip(tireOrder, tireWidgets):
+                widget.wear.setText("{}%".format(int(getattr(fdp, "tire_wear_{}".format(tire)) * 100)))
+                tireTemp = getattr(fdp, "tire_temp_{}".format(tire))
+                tireTemp = float(self.convertUnits("tire_wear_{}".format(tire), tireTemp))
+                #palette = widget.tireIcon.palette()
+                if tireTemp <= blueTemp:
+                    #palette.setColor(widget.foregroundRole(), QColor(0, 0, 255))
+                    widget.tireIcon.setStyleSheet("border: 3px solid blue;")
+                elif tireTemp >= redTemp:
+                    #palette.setColor(widget.foregroundRole(), QColor(255, 0, 0))
+                    widget.tireIcon.setStyleSheet("border: 3px solid red;")
+                elif tireTemp >= yellowTemp:
+                    #palette.setColor(widget.foregroundRole(), QColor(255, 255, 0))
+                    widget.tireIcon.setStyleSheet("border: 3px solid yellow;")
+                else:
+                    #palette.setColor(widget.foregroundRole(), QColor(255, 255, 255))
+                    widget.tireIcon.setStyleSheet("border: 3px solid green;")
+
+
+
+
+
+            
 
 
 
