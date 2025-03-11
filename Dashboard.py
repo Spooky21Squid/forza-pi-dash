@@ -8,8 +8,9 @@ from fdp import ForzaDataPacket
 import select
 import yaml
 import typing
-
+from datetime import datetime, timedelta
 from enum import Enum
+from math import floor
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.setblocking(0)  # Set to non blocking, so thread can be terminated without socket blocking forever
@@ -273,6 +274,52 @@ class Dashboard(QtWidgets.QFrame):
             # Update the tire slip indicators
             self.slipRL.setValue(int(fdp.tire_combined_slip_RL * 10))
             self.slipRR.setValue(int(fdp.tire_combined_slip_RR * 10))
+
+            # Update Pos, Lap, Dist, last and current lap time widgets
+            pos = fdp.race_pos
+            self.positionWidget.update(pos)
+
+            lap = fdp.lap_no
+            self.lapWidget.update(lap)
+
+            dist = self.convertUnits(self.distanceWidget.paramName, fdp.dist_traveled)
+            self.distanceWidget.update(dist)
+
+            # last lap
+            lastLap = fdp.last_lap_time  # in seconds
+            minutes, seconds = divmod(lastLap, 60)
+            seconds = seconds
+            mseconds = (seconds - floor(seconds)) * 1000
+            self.lastLapTimeWidget.update("{}:{}.{}".format(int(minutes), int(seconds), int(mseconds)))
+            
+            # best lap
+            bestLap = fdp.best_lap_time  # in seconds
+            minutes, seconds = divmod(bestLap, 60)
+            seconds = seconds
+            mseconds = (seconds - floor(seconds)) * 1000
+            self.bestLapTimeWidget.update("{}:{}.{}".format(int(minutes), int(seconds), int(mseconds)))
+
+
+
+    def convertUnits(self, paramName: str, paramValue):
+        """
+        Converts a parameter from the default units to the current
+        units and returns as a string
+        """
+        global paramConfig
+        global dashConfig
+
+        if paramName in paramConfig:
+            config: dict = paramConfig[paramName]
+            units: str = dashConfig["units"]
+            if "units" in config:
+                if units in config["units"]:
+                    paramValue *= config["factor"][units]
+            dp = config.get("dp", 2)  # Decimal places is 2 if not specified
+        fs = "{:." + str(dp) + "f}"
+        val = fs.format(paramValue)
+        return val
+
 
     """ Starts/stops listening for Forza UDP packets
     """
