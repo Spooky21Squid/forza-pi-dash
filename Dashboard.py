@@ -205,6 +205,8 @@ class Dashboard(QtWidgets.QFrame):
         self.fuelWidget = QtWidgets.QFrame()
 
         centreLayout = QtWidgets.QGridLayout()
+        centreLayout.setSpacing(3)
+        centreLayout.setContentsMargins(0,0,0,0)
 
         # Left side
         centreLayout.addWidget(self.listenButton, 0, 0)
