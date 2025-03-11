@@ -125,6 +125,10 @@ class Dashboard(QtWidgets.QFrame):
         self.worker = None
         self.thread = None
 
+        # Used for testing - does nothing with a new packet if true, to slow
+        # down updating the display
+        self.discardData = False
+
         self.paramDict = {}
 
         self.initWidget()
@@ -257,6 +261,10 @@ class Dashboard(QtWidgets.QFrame):
     """
     def onCollected(self, data):
         logging.debug("Received Data")
+        if self.discardData:
+            self.discardData = not self.discardData
+            return
+        self.discardData = not self.discardData
         fdp = ForzaDataPacket(data)
         if fdp.is_race_on:
             self.gearIndicator.display(fdp.gear)
