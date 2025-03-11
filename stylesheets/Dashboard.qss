@@ -5,19 +5,18 @@ Dashboard {
 
 GearIndicator {
     background-color: white;
-    /*margin: 0 300px 0 300px;*/
     border: 0;
 }
 
-GearIndicator#gearIndicator[change=true] {
+GearIndicator[change=true] {
     background-color: red;
 }
 
-GearIndicator#gearIndicator[stay=true] {
+GearIndicator[stay=true] {
     background-color: white;
 }
 
-GearIndicator#gearIndicator[ready=true] {
+GearIndicator[ready=true] {
     background-color: yellow;
 }
 
@@ -50,4 +49,11 @@ AccelBrakeWidget#accelWidget::chunk {
 
 AccelBrakeWidget#brakeWidget::chunk {
     background-color: red;
+}
+
+QFrame#tire {
+    /*color: white;*/
+    border: 3px solid white;
+    border-radius: 10px;
+    margin: 10px 5px 10px 5px;
 }

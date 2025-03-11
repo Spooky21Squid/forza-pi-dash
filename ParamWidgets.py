@@ -69,3 +69,51 @@ class AccelBrakeWidget(QtWidgets.QProgressBar):
         self.setTextVisible(False)
         self.setOrientation(Qt.Vertical)
         self.setFixedWidth(12)
+
+
+class SingleTireWidget(QtWidgets.QFrame):
+
+    # Does it represent a tire on the left or right side of the car
+    class Orientation(Enum):
+        LEFT = 0
+        RIGHT = 1
+
+    def __init__(self, orientation: Orientation = Orientation.LEFT):
+        super().__init__()
+        
+        self.tireIcon = QtWidgets.QFrame(frameShape=QtWidgets.QFrame.Box)
+        self.tireIcon.setObjectName("tire")
+        self.wear = QtWidgets.QLabel("0%")
+
+        self.wear.setAlignment(Qt.AlignCenter)
+
+        # Position the tire icon and wear % on different sides of the widget
+        # depending on orientation (left or right tire). Makes no difference
+        # to the widgets function.
+        layout = QtWidgets.QHBoxLayout(self)
+        if orientation is self.Orientation.LEFT:
+            layout.addWidget(self.wear)
+            layout.addWidget(self.tireIcon)
+        else:
+            layout.addWidget(self.tireIcon)
+            layout.addWidget(self.wear)
+        self.setLayout(layout)
+
+
+class TireWidget(QtWidgets.QFrame):
+    def __init__(self):
+        super().__init__()
+        layout = QtWidgets.QGridLayout()
+
+        self.fl = SingleTireWidget()
+        self.fr = SingleTireWidget(SingleTireWidget.Orientation.RIGHT)
+        self.rl = SingleTireWidget()
+        self.rr = SingleTireWidget(SingleTireWidget.Orientation.RIGHT)
+
+        layout.addWidget(self.fl, 0, 0)
+        layout.addWidget(self.fr, 0, 1)
+        layout.addWidget(self.rl, 1, 0)
+        layout.addWidget(self.rr, 1, 1)
+
+        self.setLayout(layout)
+

@@ -1,6 +1,6 @@
 from PySide6 import QtWidgets
 from PySide6.QtCore import Qt, QObject, Signal, Slot, QThread
-from ParamWidgets import TireSlipWidget, ParamWidget, AccelBrakeWidget
+from ParamWidgets import TireSlipWidget, ParamWidget, AccelBrakeWidget, TireWidget
 
 import socket
 import time
@@ -194,13 +194,14 @@ class Dashboard(QtWidgets.QFrame):
         self.gearAccelBrakeWidget.setLayout(gearAccelBrakeLayout)
 
         self.centreWidget = QtWidgets.QFrame()
-        self.tireWidget = QtWidgets.QFrame()
         self.lastLapTimeWidget = ParamWidget("last_lap_time", "Last")
         self.bestLapTimeWidget = ParamWidget("best_lap_time", "Best")
 
         self.interval = QtWidgets.QLabel("0.000")  # Calculated interval estimate
         self.interval.setProperty("style", True)
         self.interval.setAlignment(Qt.AlignCenter)
+
+        self.tireWidget = TireWidget()
 
         self.fuelWidget = QtWidgets.QFrame()
 
@@ -319,6 +320,12 @@ class Dashboard(QtWidgets.QFrame):
             # accel and brake progress bars
             self.accelWidget.setValue(fdp.accel)
             self.brakeWidget.setValue(fdp.brake)
+
+            # Tire wear and heat
+            self.tireWidget.fl.wear.setText("{}%".format(int(fdp.tire_wear_FL * 100)))
+            self.tireWidget.fr.wear.setText("{}%".format(int(fdp.tire_wear_FR * 100)))
+            self.tireWidget.rl.wear.setText("{}%".format(int(fdp.tire_wear_RL * 100)))
+            self.tireWidget.rr.wear.setText("{}%".format(int(fdp.tire_wear_RR * 100)))
 
 
 
