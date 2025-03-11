@@ -25,10 +25,10 @@
 # Any parameter that doesn't have a 'Custom' unit will fall back to the default.
 
 is_race_on:
-  label: Is Race On
+  label: Racing
 
 timestamp_ms:
-  label: Timestamp
+  label: Time
   units:
     default: ms
 
@@ -48,13 +48,13 @@ current_engine_rpm:
     default: rpm
 
 acceleration_x:
-  label: X Accel
+  label: X Acc
 
 acceleration_y:
-  label: Y Accel
+  label: Y Acc
 
 acceleration_z:
-  label: Z Accel
+  label: Z Acc
 
 velocity_x:
   label: X Vel
@@ -66,13 +66,13 @@ velocity_z:
   label: Z Vel
 
 angular_velocity_x:
-  label: X Ang Vel
+  label: X Ang V
 
 angular_velocity_y:
-  label: Y Ang Vel
+  label: Y Ang V
 
 angular_velocity_z:
-  label: Z Ang Vel
+  label: Z Ang V
 
 yaw:
   label: Yaw
@@ -339,7 +339,7 @@ fuel:
   label: Fuel
 
 dist_traveled:
-  label: Distance
+  label: Dist
   units:
     default: m
     imperial: mi
@@ -350,22 +350,22 @@ dist_traveled:
   dp: 3
 
 best_lap_time:
-  label: Best Lap
+  label: Best L
   units:
     default: s
 
 last_lap_time:
-  label: Last Lap
+  label: Last L
   units:
     default: s
 
 cur_lap_time:
-  label: Cur Lap
+  label: Cur L
   units:
     default: s
 
 cur_race_time:
-  label: Total Time
+  label: T Time
   units:
     default: s
 
@@ -385,7 +385,7 @@ clutch:
   label: Clutch
 
 handbrake:
-  label: Handbrake
+  label: H.brake
 
 gear:
   label: Gear
