@@ -1,17 +1,16 @@
 from PySide6 import QtWidgets
 from PySide6.QtCore import Qt, QObject, Signal, Slot, QThread
 from ParamWidgets import TireSlipWidget, ParamWidget, AccelBrakeWidget, TireWidget
-from PySide6.QtGui import QColor
 
+import logging
 import socket
-import time
 from fdp import ForzaDataPacket
 import select
 import yaml
-import typing
-from datetime import datetime, timedelta
 from enum import Enum
 from math import floor
+
+logging.basicConfig(level=logging.INFO)
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.setblocking(0)  # Set to non blocking, so thread can be terminated without socket blocking forever
@@ -70,14 +69,14 @@ class Worker(QObject):
                 ready = select.select([sock], [], [], timeout)
                 if ready[0]:
                     data, address = sock.recvfrom(1024)
-                    print('received {} bytes from {}'.format(len(data), address))
+                    logging.debug('received {} bytes from {}'.format(len(data), address))
                     self.collected.emit(data)
                 #data, address = sock.recvfrom(1024)
                 #print('received {} bytes from {}'.format(len(data), address))
                 #time.sleep(0.05)
                 #self.collected.emit(data)
             except BlockingIOError:
-                print("Not available, trying again...")
+                logging.info("Could not listen to {}, trying again...".format(address))
                 #time.sleep(1)
                 pass
                 
@@ -136,7 +135,7 @@ class Dashboard(QtWidgets.QFrame):
         try:
             updateParamConfig(paramConfigFilePath)
         except:
-            print("Unable to open config param file, reverting to defaults.")
+            logging.info("Unable to open {}, reverting to defaults.".format(paramConfigFilePath))
 
         # Tries to read the dashboard config file. If unsuccessful, widgets will
         # fall back to the default units sent by Forza
@@ -160,7 +159,7 @@ class Dashboard(QtWidgets.QFrame):
                     self.paramDict[str(count)] = ParamWidget("", "", "")  # Populate the rest of the grid with blank widgets
                     count += 1
         except:
-            print("Unable to open config dash file, reverting to defaults.")
+            logging.info("Unable to open {}, reverting to defaults.".format(dashConfigFilePath))
 
         self.resize(800, 480)  # Raspberry Pi touchscreen resolution
 
@@ -248,7 +247,7 @@ class Dashboard(QtWidgets.QFrame):
         self.accelWidget.setValue(50)
     
     def loop_finished(self):
-        print("Finished listening")
+        logging.info("Finished listening.")
 
         ## Reset the tire slip indicator bars
         self.slipRR.reset()
@@ -257,7 +256,7 @@ class Dashboard(QtWidgets.QFrame):
     """Updates all the widgets
     """
     def onCollected(self, data):
-        print("Received Data")
+        logging.debug("Received Data")
         fdp = ForzaDataPacket(data)
         if fdp.is_race_on:
             self.gearIndicator.display(fdp.gear)
