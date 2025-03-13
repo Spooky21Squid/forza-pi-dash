@@ -225,6 +225,7 @@ class Dashboard(QtWidgets.QFrame):
         centreLayout.addWidget(self.gearAccelBrakeWidget, 0, 2, 3, 1)
         row = 3
         for w in self.paramDict.values():
+            w.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
             centreLayout.addWidget(w, row, 2)
             row += 1
         del row
