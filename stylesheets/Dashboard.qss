@@ -20,7 +20,7 @@ GearIndicator[ready=true] {
     background-color: yellow;
 }
 
-ParamWidget, QPushButton, QLabel[style=true] {
+ParamWidget, QPushButton, QLabel[style=true], TireWidget, FuelWidget {
     border: 2px solid white;
     border-radius: 15px;
 }
