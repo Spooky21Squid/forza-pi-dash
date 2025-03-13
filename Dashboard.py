@@ -293,7 +293,6 @@ class Dashboard(QtWidgets.QFrame):
         self.discardData = not self.discardData
         fdp = ForzaDataPacket(data)
         if fdp.is_race_on:
-            logging.info(self.fuelLevelHistory)
 
             self.gearIndicator.display(fdp.gear)
 
