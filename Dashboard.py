@@ -131,7 +131,32 @@ class Dashboard(QtWidgets.QFrame):
 
         self.paramDict = {}
 
+        # Stores the % fuel left over the last 4 laps
+        # When the first packet is collected, all indexes are initialised with
+        # the current fuel level.
+        self.fuelLevelHistory = [0, 0, 0, 0]
+
+        # The last received packet as a fdp object
+        self.lastPacket: ForzaDataPacket = None
+
         self.initWidget()
+    
+
+    def getAverageFuelUsage(self):
+        """Gets the average fuel usage over the last 3 laps"""
+
+        totalUsed = 0
+        lapCount = 0
+        for i in range(1, 4):
+            used = self.fuelLevelHistory[i - 1] - self.fuelLevelHistory[i]
+            if used > 0:
+                lapCount += 1
+                totalUsed += used
+
+        if totalUsed == 0:
+            return 0
+        
+        return totalUsed / lapCount
 
     
     def initWidget(self):
@@ -268,6 +293,8 @@ class Dashboard(QtWidgets.QFrame):
         self.discardData = not self.discardData
         fdp = ForzaDataPacket(data)
         if fdp.is_race_on:
+            logging.info(self.fuelLevelHistory)
+
             self.gearIndicator.display(fdp.gear)
 
             if fdp.current_engine_rpm / fdp.engine_max_rpm >= 0.8:
@@ -331,11 +358,6 @@ class Dashboard(QtWidgets.QFrame):
             self.brakeWidget.setValue(fdp.brake)
 
             # Tire wear and heat
-            #self.tireWidget.fl.wear.setText("{}%".format(int(fdp.tire_wear_FL * 100)))
-            #self.tireWidget.fr.wear.setText("{}%".format(int(fdp.tire_wear_FR * 100)))
-            #self.tireWidget.rl.wear.setText("{}%".format(int(fdp.tire_wear_RL * 100)))
-            #self.tireWidget.rr.wear.setText("{}%".format(int(fdp.tire_wear_RR * 100)))
-
             tireWidgets = (
                 self.tireWidget.fl,
                 self.tireWidget.fr,
@@ -367,6 +389,39 @@ class Dashboard(QtWidgets.QFrame):
                 else:
                     #palette.setColor(widget.foregroundRole(), QColor(255, 255, 255))
                     widget.tireIcon.setStyleSheet("border: 3px solid green;")
+            
+            # Fuel widget
+            fuel = fdp.fuel
+            self.fuelWidget.fuelLevel.update(self.convertUnits("fuel", fuel * 100))
+            lapsLeft = 0
+            usage = self.getAverageFuelUsage()
+
+            # If on a new lap, update the fuel values
+            if self.lastPacket and fdp.lap_no != self.lastPacket.lap_no:
+                self.fuelLevelHistory.pop(0)
+                self.fuelLevelHistory.append(fuel)
+
+                # update estimated fuel used per lap
+                self.fuelWidget.fuelPerLap.update(self.convertUnits("fuel", usage * 100))
+
+            # update estimated laps left
+            if usage:
+                lapsLeft =  fuel / usage
+                self.fuelWidget.lapsLeft.update(self.convertUnits("fuel", lapsLeft))
+
+            # Display small pit warning if laps left <= 1
+            if lapsLeft <= 1 and usage:
+                self.fuelWidget.pitNow.setStyleSheet("background-color: lightgrey;")
+            else:
+                self.fuelWidget.pitNow.setStyleSheet("background-color: black;")
+
+
+
+
+            self.lastPacket = fdp
+
+
+
 
     def convertUnits(self, paramName: str, paramValue):
         """

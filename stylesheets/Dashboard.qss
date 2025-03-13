@@ -59,4 +59,21 @@ QFrame#tire {
 
 ParamWidget#fuel {
     border: 0;
+    /*background-color: grey;*/
+    padding-right: 30px;
+}
+
+QLabel {
+    /*background-color: lightgrey;*/
+}
+
+QLabel#pitNowSmall {
+    background-color: black;
+    color: black;
+    margin: 0 10px 0 10px;
+    font-weight: bold;
+}
+
+FuelWidget {
+    padding-bottom: 7px;
 }

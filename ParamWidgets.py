@@ -1,15 +1,6 @@
 from PySide6 import QtWidgets
-from PySide6.QtCore import Qt, QObject, Signal, Slot
-from abc import ABC, abstractmethod
+from PySide6.QtCore import Qt
 from enum import Enum
-
-
-"""Defines the 2 types of units the dash can display"""
-class Units(Enum):
-    IMPERIAL = 0
-    METRIC = 1
-    DEFAULT = 2
-
 
 """A compund widget that simply Displays the name of a parameter, and the value of
 that parameter next to it. Eg. tire_temp_FL displays the tempatarure
@@ -125,11 +116,22 @@ class FuelWidget(QtWidgets.QFrame):
 
         self.fuelLevel = ParamWidget("fuel", "Fuel Level")
         self.fuelLevel.setObjectName("fuel")
+        self.fuelLevel.paramLabel.setAlignment(Qt.AlignVCenter)
+        self.fuelLevel.paramValue.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.fuelPerLap = ParamWidget("fpl", "Fuel Per Lap")
         self.fuelPerLap.setObjectName("fuel")
+        self.fuelPerLap.paramLabel.setAlignment(Qt.AlignVCenter)
+        self.fuelPerLap.paramValue.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.lapsLeft = ParamWidget("lapsLeft", "Laps Left")
         self.lapsLeft.setObjectName("fuel")
-        self.pitNow = QtWidgets.QLabel()
+        self.lapsLeft.paramLabel.setAlignment(Qt.AlignVCenter)
+        self.lapsLeft.paramValue.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+
+        # Background color set to black by default so user cannot see it, but the
+        # layout stays the same
+        self.pitNow = QtWidgets.QLabel("PIT THIS LAP")
+        self.pitNow.setAlignment(Qt.AlignCenter)
+        self.pitNow.setObjectName("pitNowSmall")
 
         layout.addWidget(self.fuelLevel)
         layout.addWidget(self.fuelPerLap)
