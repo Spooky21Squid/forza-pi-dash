@@ -1,6 +1,16 @@
 #!/usr/env/python
 # -*- coding: utf-8 -*-
 
+# ----------------------------------------------
+# Fix line 160 to show current points distance
+# Find out why currentIndex stalls (might need to stop
+# it being a greedy algorithm eg. just looking at next point)
+# Maybe the algo is just bad and sorting is required
+# Or I should just implement my own time tracking system
+# instead of using forzas
+# ----------------------------------------------
+
+
 import logging
 import socket
 import datetime as dt
@@ -68,7 +78,7 @@ class Interval:
                 break
         
         currentInterval = self.currentPoint[1] - closestPoint[1]  # Negative is faster
-        return currentInterval
+        self.interval = currentInterval
 
     def update(self, fdp: ForzaDataPacket):
         """Updates the Interval object with the latest packet"""
@@ -90,28 +100,33 @@ class Interval:
 
             # just began a new lap, update the lap counter and compare it to best lap
             if self.bestLap is None or fdp.last_lap_time < self.bestLap:  # If player just set a new best lap
-                logging.info("Interval: New Lap")
+                logging.info("Interval: Best Lap! {}".format(fdp.last_lap_time))
                 self.bestLapPoints = self.currentLapPoints
                 self.bestLap = fdp.last_lap_time
             else: # If player didn't set a best lap
+                logging.info("Interval: New Lap. {}".format(fdp.last_lap_time))
                 self.currentLapPoints = [self.currentPoint]
                 self.currentLap += 1
+            self.currentIndex = 0
             self.updateInterval()
 
         else:  # player lap is not consistent with self.currentLap (eg. started recording in the middle of a session)
             if playerLap == self.syncLap:
-                logging.info("Interval: Synced Laps. Recorded lap: {}".format(self.currentLap))
+                logging.info("Interval: Synced Laps.")
                 # player has reached new sync lap, update object and start recording
                 self.currentLapPoints = [self.currentPoint]
-                self.currentLap += 1
+                self.currentLap = self.syncLap
                 self.updateInterval()
             else:  # Keep ignoring the lap times until the player reaches a new lap
                 self.syncLap = playerLap + 1
         
     def getInterval(self):
         """Returns the most up to date interval based on all collected data points.
-        If there is not enough data to calculate an interval, return None."""
-        return self.interval
+        If there is not enough data to calculate an interval, return 0."""
+        if self.interval:
+            return self.interval
+        else:
+            return 0
 
 def to_str(value):
     '''
@@ -149,9 +164,17 @@ def dump_stream(port):
                     logging.info('{}: in race, logging data'.format(dt.datetime.now()))
 
                 n_packets += 1
+
+                if n_packets % 30 == 0:
+                    try:
+                        logging.info('Interval: {:.2f}s. currentIndex: {}, dist: {:.2f}'.format(interval.getInterval(), interval.currentIndex, (interval.currentPoint - interval.bestLapPoints[interval.currentIndex][0])))
+                    except:
+                        logging.info('Interval: {:.2f}s. currentIndex: {}'.format(interval.getInterval(), interval.currentIndex))
+
                 if n_packets % 60 == 0:
                     #logging.info('{}: logged {} packets'.format(dt.datetime.now(), n_packets))
-                    logging.info('Interval: {}s'.format(interval.getInterval()))
+                    #logging.info('Interval: {}s. Lap: {}, '.format(interval.getInterval(), interval.currentLap))
+                    pass
 
             else:
                 if n_packets > 0:
