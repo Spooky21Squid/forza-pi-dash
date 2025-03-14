@@ -342,15 +342,17 @@ class Dashboard(QtWidgets.QFrame):
             lastLap = fdp.last_lap_time  # in seconds
             minutes, seconds = divmod(lastLap, 60)
             seconds = seconds
-            mseconds = (seconds - floor(seconds)) * 1000
-            self.lastLapTimeWidget.update("{}:{}.{}".format(int(minutes), int(seconds), int(mseconds)))
+            mseconds = str(seconds - floor(seconds))  # gets us the decimal part
+            mseconds = mseconds[2:5]
+            self.lastLapTimeWidget.update("{}:{}.{}".format(int(minutes), int(seconds), mseconds))
             
             # best lap
             bestLap = fdp.best_lap_time  # in seconds
             minutes, seconds = divmod(bestLap, 60)
             seconds = seconds
-            mseconds = (seconds - floor(seconds)) * 1000
-            self.bestLapTimeWidget.update("{}:{}.{}".format(int(minutes), int(seconds), int(mseconds)))
+            mseconds = str(seconds - floor(seconds))  # gets us the decimal part
+            mseconds = mseconds[2:5]
+            self.bestLapTimeWidget.update("{}:{}.{}".format(int(minutes), int(seconds), mseconds))
 
             # accel and brake progress bars
             self.accelWidget.setValue(fdp.accel)
@@ -399,6 +401,7 @@ class Dashboard(QtWidgets.QFrame):
             if self.lastPacket and fdp.lap_no != self.lastPacket.lap_no:
                 self.fuelLevelHistory.pop(0)
                 self.fuelLevelHistory.append(fuel)
+                usage = self.getAverageFuelUsage()
 
                 # update estimated fuel used per lap
                 self.fuelWidget.fuelPerLap.update(self.convertUnits("fuel", usage * 100))
