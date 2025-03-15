@@ -157,25 +157,21 @@ class IntervalWidget(QtWidgets.QLabel):
         self.accuracy = 20
         self.distanceFactor = 0
         
-        # Stores a list of lapDistance:int - lapTime:float points, where lapDistance
-        # is the distance traveled during that lap in metres (the distance to the start
-        # of the mini sector), and lapTime is the current lap time recorded at
+        # Stores a list of (lapDistance:int, lapTime:float) points, where lapDistance
+        # is the distance traveled during that lap in metres, and lapTime is the current lap time recorded at
         # that distance in seconds
-        self.bestLapPoints = dict()
-        self.currentLapPoints = dict()
+        self.bestLapPoints = list()
+        self.currentLapPoints = list()
 
         self.interval: float = None
 
     def insertPoint(self):
         """
-        Inserts the current point into the currentLapPoints list.
+        Inserts the current point into the currentLapPoints list. If the distance
+        recorded is less or equal than the previous packet, it is ignored.
         """
-
-        # Ignores the point if the mini sector entry already has a value
-        miniSector, remainder = divmod(int(self.currentPoint[0]), self.accuracy)
-        #miniSector = int(self.currentPoint[0]) % self.accuracy
-        if not self.currentLapPoints.get(miniSector):
-            self.currentLapPoints[miniSector] = self.currentPoint[1]
+        if len(self.currentLapPoints) == 0 or self.currentPoint[0] > self.currentLapPoints[-1][0]:
+            self.currentLapPoints.append(self.currentPoint)
     
     def updateInterval(self):
         """
@@ -183,15 +179,33 @@ class IntervalWidget(QtWidgets.QLabel):
         the best lap's corresponding sector time
         """
 
-        currentTime = self.currentPoint[1]  # In seconds
-        miniSector, remainder = divmod(int(self.currentPoint[0]), self.accuracy)
-        #miniSector = int(self.currentPoint[0]) % self.accuracy
-        bestSectorTime = self.bestLapPoints.get(miniSector, 0)
-
-        if bestSectorTime == 0:
+        if len(self.bestLapPoints) == 0:
             self.interval = 0
-        else:
-            self.interval = currentTime - bestSectorTime  # Negative is faster 
+            return
+
+        currentTime = self.currentPoint[1]  # In seconds
+        currentDistance = self.currentPoint[0]
+
+        # Search for the closest best lap point
+        # Could use binary search but for now just use linear
+
+        bestDifference = 99999999
+        bestPointIndex = 0
+
+        currentIndex = 0
+        while currentIndex < len(self.bestLapPoints):
+            bestLapDist, bestLapTime = self.bestLapPoints[currentIndex]
+            currentDifference = abs(bestLapDist - currentDistance)
+            if currentDifference <= bestDifference:
+                bestDifference = currentDifference
+                bestPointIndex = currentIndex
+                currentIndex += 1
+            else:
+                break
+        
+        bestPoint = self.bestLapPoints[bestPointIndex]
+        self.interval = currentTime - bestPoint[1]  # negative is Faster
+        
 
     def update(self, fdp: ForzaDataPacket):
         """
@@ -212,10 +226,10 @@ class IntervalWidget(QtWidgets.QLabel):
         if playerLap == self.currentLap:
             # Log the current point if the player is at the start of a new mini sector
 
-            if int(lapDistance) % self.accuracy == 0:
-                self.insertPoint()
-                self.updateInterval()
-                logging.info("Interval update: {:.2f} (Cur Lap)".format(self.interval))
+            #if int(lapDistance) % self.accuracy == 0:
+            self.insertPoint()
+            self.updateInterval()
+            #logging.info("Interval update: {:.2f} (Cur Lap)".format(self.interval))
 
         elif playerLap == self.currentLap + 1:
             
@@ -232,7 +246,7 @@ class IntervalWidget(QtWidgets.QLabel):
             # and still display an interval, and also to allow a useful interval to be
             # displayed when using non-forza-clean limits (eg. some Tora races), but this
             # can be changed
-            if self.bestLap is None or fdp.last_lap_time < self.bestLap:  # If player just set a new best lap
+            if self.bestLap is None or self.bestLap <= 0 or fdp.last_lap_time < self.bestLap:  # If player just set a new best lap
                 logging.info("Interval: Best Lap! {}".format(fdp.last_lap_time))
                 self.bestLapPoints = self.currentLapPoints.copy()
                 self.bestLap = fdp.last_lap_time

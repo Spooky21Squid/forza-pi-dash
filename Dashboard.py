@@ -11,7 +11,7 @@ from enum import Enum
 from math import floor
 
 
-#logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO)
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.setblocking(0)  # Set to non blocking, so thread can be terminated without socket blocking forever
@@ -357,7 +357,7 @@ class Dashboard(QtWidgets.QFrame):
             # interval
             self.interval.update(fdp)
             currentInterval = self.interval.getInterval()
-            #logging.info("Interval: {}".format(currentInterval))
+            logging.info("Interval: {:.10f}, Lap Dist: {:.5f}, Lap Time: {:.5f}".format(currentInterval, self.interval.currentPoint[0], self.interval.currentPoint[1]))
             minutes, seconds = divmod(abs(currentInterval), 60)
             mseconds = str(seconds - floor(seconds))  # gets us the decimal part
             mseconds = mseconds[2:5]
