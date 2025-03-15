@@ -10,6 +10,11 @@
 # instead of using forzas
 # ----------------------------------------------
 
+# -----------------
+# Could try another method where each n metres in the lap, record the
+# current lap time, and compare with the last lap at the same point
+# ------------------
+
 
 import logging
 import socket
@@ -68,6 +73,8 @@ class Interval:
         nextIndex = self.currentIndex + 1
 
         while nextIndex < len(self.bestLapPoints):
+            if self.currentIndex == 230:
+                logging.info("Reached 230")
             nextDifference = abs(self.currentPoint[0] - self.bestLapPoints[nextIndex][0])
             if nextDifference <= closestDifference:
                 closestPoint = self.bestLapPoints[nextIndex]
@@ -75,7 +82,29 @@ class Interval:
                 self.currentIndex = nextIndex
                 nextIndex += 1
             else:
+                possIndex = nextIndex
+                possPoint = None
+                possDifference = None
+                endIndex = possIndex + 100  # Checks next 6 packets
+                # check the next couple of points just in case they're closer
+                while possIndex < len(self.bestLapPoints) - 1 and possIndex <= endIndex:
+                    possIndex += 1
+                    possPoint = self.bestLapPoints[possIndex]
+                    possDifference = abs(self.currentPoint[0] - possPoint[0])
+                    if possDifference <= closestDifference:
+                        closestPoint = self.bestLapPoints[possIndex]
+                        closestDifference = possDifference
+                        self.currentIndex = possIndex
+                        nextIndex = possIndex + 1
+                        if self.currentIndex == 230:
+                            logging.info("Reached 230")
                 break
+
+                    
+                    
+
+
+
         
         currentInterval = self.currentPoint[1] - closestPoint[1]  # Negative is faster
         self.interval = currentInterval
