@@ -15,6 +15,35 @@
 # current lap time, and compare with the last lap at the same point
 # ------------------
 
+# ----------------------
+# Or another, where the track is split into grid squares of size (n, m).
+# Every time the car enters the square, time is logged and compared
+# with the best lap. Difference is the interval, and granularity can
+# be determined by the size of the grid squares.
+
+# Note, square (0, 0) is not always in the centre of the track.
+# ----------------------
+
+# *************************
+# - use dist_traveled (or lap_distance)
+# dist_traveled is always parallel to the racing surface, meaning sectors
+# calculated using this always bisect the track at roughly 90 degrees.
+# So, each n metres (eg. 50 metres), find time delta to the same position
+# in the last lap.
+
+# Because dist_traveled keeps going up, use lap_distance which is the distance
+# traveled during the current lap. This is just the current distance minus the
+# total distance traveled at the start of a new lap.
+
+# Put this distance into a dict (ie. metres : time), so each n metres will
+# have a new entry in the dict and it can be quickly compared to another lap.
+
+# Need to take only the first measurement, and ignore subsequent entries
+# for the same n distance as forza may supply many subsequent packets that have
+# the same distance.
+#   - if the dict already has an entry in it, ignore the packet
+# *************************
+
 
 import logging
 import socket
@@ -33,95 +62,72 @@ class Interval:
         self.currentLap = -1
         self.syncLap = 0  # The lap the player needs to reach to begin recording intervals
         self.currentPoint = None
-        self.currentIndex = 0
+        self.accuracy = 20  # Size of each mini sector in metres
+        self.distanceFactor = 0  # The total distance traveled at the start of the current lap
         
-        # Stores a list of position - time points, where each position is the
-        # sum of the x and z position of the player at that current time
-        self.bestLapPoints = []
-        self.currentLapPoints = []
+        # Stores a list of lapDistance:int - lapTime:float points, where lapDistance
+        # is the distance traveled during that lap in metres, and lapTime is the current
+        # lap time recorded at that distance in seconds
+        self.bestLapPoints = dict()
+        self.currentLapPoints = dict()
 
         self.interval: float = None
 
     def insertPoint(self):
         """
         Inserts the current point into the currentLapPoints list.
-
-        Currently this just appends it to the end of the list, as I want them ordered
-        by time and this is usually the order the packets arrive in. Change this method
-        if the order should be different eg. ordered by distance to another point.
         """
-        self.currentLapPoints.append(self.currentPoint)
+
+        # Ignores the point if the mini sector entry already has a value
+        miniSector, remainder = divmod(int(self.currentPoint[0]), self.accuracy)
+        #miniSector = int(self.currentPoint[0]) % self.accuracy
+        if not self.currentLapPoints.get(miniSector):
+            self.currentLapPoints[miniSector] = self.currentPoint[1]
     
     def updateInterval(self):
         """
-        Updates the current interval by comparing the current point to the closest
-        point in bestLapPoints.
-
-        How:
-        Tracks the index of the previous closest point (self.currentIndex) and uses this
-        as a starting point to find the next closest point. As these points are ordered by
-        lap time instead of distance, this next point will always be 'to the right' of the last.
-        Assuming the player isn't going backwards of course. In which case the interval is the
-        least of their concerns.
+        Updates the current interval by comparing the current point's lap time to
+        the best lap's corresponding sector time
         """
 
-        if self.bestLap == None:
-            return 0
+        currentTime = self.currentPoint[1]  # In seconds
+        miniSector, remainder = divmod(int(self.currentPoint[0]), self.accuracy)
+        #miniSector = int(self.currentPoint[0]) % self.accuracy
+        bestSectorTime = self.bestLapPoints.get(miniSector, 0)
 
-        closestPoint = self.bestLapPoints[self.currentIndex]
-        closestDifference = abs(self.currentPoint[0] - closestPoint[0])
-        nextIndex = self.currentIndex + 1
-
-        while nextIndex < len(self.bestLapPoints):
-            if self.currentIndex == 230:
-                logging.info("Reached 230")
-            nextDifference = abs(self.currentPoint[0] - self.bestLapPoints[nextIndex][0])
-            if nextDifference <= closestDifference:
-                closestPoint = self.bestLapPoints[nextIndex]
-                closestDifference = nextDifference
-                self.currentIndex = nextIndex
-                nextIndex += 1
-            else:
-                possIndex = nextIndex
-                possPoint = None
-                possDifference = None
-                endIndex = possIndex + 100  # Checks next 6 packets
-                # check the next couple of points just in case they're closer
-                while possIndex < len(self.bestLapPoints) - 1 and possIndex <= endIndex:
-                    possIndex += 1
-                    possPoint = self.bestLapPoints[possIndex]
-                    possDifference = abs(self.currentPoint[0] - possPoint[0])
-                    if possDifference <= closestDifference:
-                        closestPoint = self.bestLapPoints[possIndex]
-                        closestDifference = possDifference
-                        self.currentIndex = possIndex
-                        nextIndex = possIndex + 1
-                        if self.currentIndex == 230:
-                            logging.info("Reached 230")
-                break
-
-                    
-                    
-
-
-
-        
-        currentInterval = self.currentPoint[1] - closestPoint[1]  # Negative is faster
-        self.interval = currentInterval
+        if bestSectorTime == 0:
+            self.interval = 0
+        else:
+            self.interval = currentTime - bestSectorTime  # Negative is faster  
 
     def update(self, fdp: ForzaDataPacket):
-        """Updates the Interval object with the latest packet"""
+        """
+        Updates the Interval object with the latest packet
+        
+        To display an accurate interval, an entire uninterrupted lap needs to be
+        recorded as a baseline. So if a player starts the dashboard in the middle of
+        a lap, that lap is ignored, and the next lap is used as a baseline. This means
+        the interval will appear on the 2nd lap.
+        """
+        
         playerLap = int(fdp.lap_no)
-        self.currentPoint = (fdp.position_x + fdp.position_z, fdp.cur_lap_time)
+        currentLapTime = fdp.cur_lap_time
+        currentDistance = fdp.dist_traveled
+        lapDistance = currentDistance - self.distanceFactor
+        self.currentPoint = (lapDistance, currentLapTime)
 
         if playerLap == self.currentLap:
-            # log another point to the currentLapPoints and calculate the current interval
-            self.insertPoint()
-            self.updateInterval()
+            # Log the current point if the player is at the start of a new mini sector
+
+            if int(lapDistance) % self.accuracy == 0:
+                self.insertPoint()
+                self.updateInterval()
+                logging.info("Interval update: {:.2f} (Cur Lap)".format(self.interval))
 
         elif playerLap == self.currentLap + 1:
+            
             # If the player stopped listening on the prev lap and started again on the next lap
-            if fdp.cur_lap_time > 1:
+            if currentLapTime > 1:
                 self.currentLap = -1
                 self.currentLapPoints = []
                 self.syncLap = playerLap + 1
@@ -130,22 +136,37 @@ class Interval:
             # just began a new lap, update the lap counter and compare it to best lap
             if self.bestLap is None or fdp.last_lap_time < self.bestLap:  # If player just set a new best lap
                 logging.info("Interval: Best Lap! {}".format(fdp.last_lap_time))
-                self.bestLapPoints = self.currentLapPoints
+                self.bestLapPoints = self.currentLapPoints.copy()
                 self.bestLap = fdp.last_lap_time
             else: # If player didn't set a best lap
                 logging.info("Interval: New Lap. {}".format(fdp.last_lap_time))
-                self.currentLapPoints = [self.currentPoint]
-                self.currentLap += 1
-            self.currentIndex = 0
+            self.currentLapPoints.clear()
+
+            # update the distance factor and thus the current point's distance
+            self.distanceFactor = fdp.dist_traveled
+            lapDistance = currentDistance - self.distanceFactor
+            self.currentPoint = (lapDistance, currentLapTime)
+
+            self.insertPoint()
+            self.currentLap += 1
             self.updateInterval()
+            logging.info("Interval update: {:.2f} (New Lap)".format(self.interval))
 
         else:  # player lap is not consistent with self.currentLap (eg. started recording in the middle of a session)
             if playerLap == self.syncLap:
-                logging.info("Interval: Synced Laps.")
+                logging.info("Interval: Synced Laps")
                 # player has reached new sync lap, update object and start recording
-                self.currentLapPoints = [self.currentPoint]
+                self.currentLapPoints.clear()
+
+                # update the distance factor and thus the current point's distance
+                self.distanceFactor = fdp.dist_traveled
+                lapDistance = currentDistance - self.distanceFactor
+                self.currentPoint = (lapDistance, currentLapTime)
+
+                self.insertPoint()
                 self.currentLap = self.syncLap
                 self.updateInterval()
+                logging.info("Interval update: {:.2f} (Sync)".format(self.interval))
             else:  # Keep ignoring the lap times until the player reaches a new lap
                 self.syncLap = playerLap + 1
         
@@ -195,10 +216,8 @@ def dump_stream(port):
                 n_packets += 1
 
                 if n_packets % 30 == 0:
-                    try:
-                        logging.info('Interval: {:.2f}s. currentIndex: {}, dist: {:.2f}'.format(interval.getInterval(), interval.currentIndex, (interval.currentPoint - interval.bestLapPoints[interval.currentIndex][0])))
-                    except:
-                        logging.info('Interval: {:.2f}s. currentIndex: {}'.format(interval.getInterval(), interval.currentIndex))
+                    #logging.info('Interval: {:.2f}s. Lap Dist: {:.2f}'.format(interval.getInterval(), interval.currentPoint[0]))
+                    pass
 
                 if n_packets % 60 == 0:
                     #logging.info('{}: logged {} packets'.format(dt.datetime.now(), n_packets))
