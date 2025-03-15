@@ -134,6 +134,11 @@ class Interval:
                 return
 
             # just began a new lap, update the lap counter and compare it to best lap
+            # Doesn't use the game's best lap - uses an internally tracked best lap which
+            # can be a dirty lap. This is to allow the dashboard to be started mid race
+            # and still display an interval, and also to allow a useful interval to be
+            # displayed when using non-forza-clean limits (eg. some Tora races), but this
+            # can be changed
             if self.bestLap is None or fdp.last_lap_time < self.bestLap:  # If player just set a new best lap
                 logging.info("Interval: Best Lap! {}".format(fdp.last_lap_time))
                 self.bestLapPoints = self.currentLapPoints.copy()
