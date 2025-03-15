@@ -8,7 +8,8 @@ from fdp import ForzaDataPacket
 import select
 import yaml
 from enum import Enum
-from math import floor
+from math import floor, sqrt
+
 
 logging.basicConfig(level=logging.INFO)
 
@@ -52,6 +53,52 @@ def updateParamConfig(configFile: str):
     global paramConfig
     with open(configFile) as f:
         paramConfig = yaml.safe_load(f)
+
+# Calculates the interval (time delta) between the player at their current position
+# and a previous lap (typically the best lap). Does this by:
+#  - Getting the player's current position as an xz coord and the cur lap time
+#    (Don't need Y as it's a vertical measure)
+#  - Getting the comparison lap's position and time data as a list of tuples of
+#    the form (position_x, position_z, cur_lap_time)
+#  - Finds the data point with the nearest x/z coord to the player's current position
+#    and compares the difference in current lap times
+#  - Returns that as the interval
+#
+# Finding the closest coordinate
+# - Brute force it - for each data point, calculate the euclidean distance to
+#   the current position and keep a record of the one with the minumum distance
+#
+# - Store it differently - for each data point, instead of storing the x and z positions,
+#   calculate the euclidean distance to a generic point in space, store them as
+#   (euc_distance, cur_lap_time), and order them based on that distance.
+#   Then, find the player's current position's euc distance to that same generic
+#   point and get the closest data point. If multiple points have the same euc
+#   distance, return the one with the closest cur_lap_time.
+#
+# - Brute force it for now - its just a prototype after all
+#   Performance will decrease for longer laps as it will have to search more to find the closest point
+def calculateInterval(intervals: list, current: tuple):
+    # current = (position_x, position_z, cur_lap_time)
+    closestEucDist = 9999999999999
+    closestPoint = None
+
+    for interval in intervals:
+        eucDist = euclideanDistance(current[0], current[1], interval[0], interval[1])
+        if eucDist < closestEucDist:
+            closestEucDist = eucDist
+            closestPoint = interval
+    
+    return current[2] - closestPoint[2]  # Negative is faster, positive is slower
+
+
+def euclideanDistance(x1, y1, x2, y2):
+    """Calculates the euclidean distance for a pair of 2-dimensional vectors"""
+
+    xDist = x2 - x1
+    yDist = y2 - y1
+    total = xDist**2 + yDist**2
+    total = sqrt(total)
+    return total
 
 
 class Worker(QObject):
@@ -138,6 +185,12 @@ class Dashboard(QtWidgets.QFrame):
 
         # The last received packet as a fdp object
         self.lastPacket: ForzaDataPacket = None
+
+        # List of tuples containing (position_x, position_z, cur_lap_time)
+        # Compared to calculate the interval
+        # (Should automatically be sorted by time, but no guarantee (UDP unreliability) but lets just assume.)
+        self.lastLapIntervals = []
+        self.currentLapIntervals = []
 
         self.initWidget()
     
@@ -353,6 +406,27 @@ class Dashboard(QtWidgets.QFrame):
             mseconds = str(seconds - floor(seconds))  # gets us the decimal part
             mseconds = mseconds[2:5]
             self.bestLapTimeWidget.update("{}:{}.{}".format(int(minutes), int(seconds), mseconds))
+
+            # interval
+            if self.lastPacket and fdp.lap_no != self.lastPacket.lap_no:
+                if fdp.best_lap_time == self.lastPacket.best_lap_time:
+                    self.lastLapIntervals = self.currentLapIntervals
+                self.currentLapIntervals = []
+
+            currentPoint = (fdp.position_x, fdp.position_z, fdp.cur_lap_time)
+            self.currentLapIntervals.append(currentPoint)
+
+            # If there is a best lap logged
+            if len(self.lastLapIntervals):
+                interval = calculateInterval(self.lastLapIntervals, currentPoint)  # in seconds
+                #logging.info("Interval: {}".format(interval))
+                minutes, seconds = divmod(abs(interval), 60)
+                mseconds = str(seconds - floor(seconds))  # gets us the decimal part
+                mseconds = mseconds[2:5]
+                sign = "+"
+                if interval < 0:
+                    sign = "-"
+                self.interval.setText("{}{}.{}".format(sign, int(seconds), mseconds))
 
             # accel and brake progress bars
             self.accelWidget.setValue(fdp.accel)
