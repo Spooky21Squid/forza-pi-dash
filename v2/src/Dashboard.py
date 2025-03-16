@@ -62,13 +62,18 @@ class Dashboard(QtWidgets.QFrame):
 
         self.resize(800, 480)
 
-        self.listenButton = QtWidgets.QPushButton("Start")
+        self.listenButton = QtWidgets.QPushButton("START")
         self.listenButton.setCheckable(True)  # Make toggleable
         self.listenButton.clicked.connect(self.toggle_loop)
         #self.listenButton.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
 
-        layout = QtWidgets.QVBoxLayout()
+        self.settingsButton = QtWidgets.QPushButton("SETTINGS")
+        self.resetButton = QtWidgets.QPushButton("RESET")
+
+        layout = QtWidgets.QHBoxLayout()
         layout.addWidget(self.listenButton)
+        layout.addWidget(self.settingsButton)
+        layout.addWidget(self.resetButton)
         self.setLayout(layout)
 
     @Slot()
@@ -77,6 +82,8 @@ class Dashboard(QtWidgets.QFrame):
         Starts/stops listening for Forza UDP packets
         """
         if not checked:
+            # Disable the button until the thread's socket times out, and the thread is terminated
+            self.listenButton.setEnabled(False)
             self.worker.working = False
             logging.debug("Worker set to false")
             self.thread.quit()
@@ -104,6 +111,7 @@ class Dashboard(QtWidgets.QFrame):
     def loop_finished(self):
         """Called after the port is closed and the dashboard stops listening to packets"""
         logging.info("Finished listening")
+        self.listenButton.setEnabled(True)
 
     def updatePort(newPort:int):
         """Updates the port that listens for forza UDP packets"""
