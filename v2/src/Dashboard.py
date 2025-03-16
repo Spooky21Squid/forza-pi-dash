@@ -4,6 +4,7 @@ from PySide6.QtCore import Slot, QThread, QObject, Signal
 import logging
 import select
 import socket
+from enum import Enum
 
 class Worker(QObject):
     """
@@ -88,6 +89,13 @@ class Dashboard(QtWidgets.QMainWindow):
     The parent widget for the dashboard, containing all the tabs needed to
     operate the dashboard (settings and display)
     """
+
+    class TabIndex(Enum):
+        """An Enum class to keep track of the index of different tabs in the stack widget"""
+        SETTINGS = 1
+        DISPLAY = 0
+
+
     def __init__(self):
         super().__init__()
 
@@ -116,12 +124,12 @@ class Dashboard(QtWidgets.QMainWindow):
     @Slot()
     def changeToSettingsTab(self):
         """Changes the current tab to the settings tab"""
-        self.stack.setCurrentIndex(1)
+        self.stack.setCurrentIndex(self.TabIndex.SETTINGS.value)
     
     @Slot()
     def changeToDisplayTab(self):
         """Changes the current tab to the display tab"""
-        self.stack.setCurrentIndex(0)
+        self.stack.setCurrentIndex(self.TabIndex.DISPLAY.value)
     
     @Slot()
     def toggle_loop(self, checked):
