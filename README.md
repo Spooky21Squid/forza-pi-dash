@@ -2,6 +2,9 @@
 # forza-pi-dash
 This project is a small motorsport dashboard for Forza Motorsport using the game's 'data out' feature. It is built to run on a raspberry pi running PiOS with a small 800x480 display (but also works on a desktop). The idea is to run this dashboard on the pi and attach it to a wheelbase for extra immersion. It also displays the same data independent of the HUD meaning, for example, you can see distance on the pi when you can't in the game.
 
+![Screenshot (20)](https://github.com/user-attachments/assets/bedfc262-e77e-405f-800b-2b718b80604f)
+
+
 ## How it works
 Forza sends a stream of UDP packets roughly 60 times a second to a specified ip address and port that the player sets in game. Each UDP packet contains information about the player and their car at that current point in time. For example the current lap number, the player's race position, tire temperatures, and various other points of data. This dashboard reads each packet, organises the data, formats it and displays it in a race-like live dashboard.
 
