@@ -70,11 +70,11 @@ class Dashboard(QtWidgets.QFrame):
         self.settingsButton = QtWidgets.QPushButton("SETTINGS")
         self.resetButton = QtWidgets.QPushButton("RESET")
 
-        layout = QtWidgets.QHBoxLayout()
-        layout.addWidget(self.listenButton)
-        layout.addWidget(self.settingsButton)
-        layout.addWidget(self.resetButton)
-        self.setLayout(layout)
+        buttonLayout = QtWidgets.QHBoxLayout()
+        buttonLayout.addWidget(self.listenButton)
+        buttonLayout.addWidget(self.settingsButton)
+        buttonLayout.addWidget(self.resetButton)
+        self.setLayout(buttonLayout)
 
     @Slot()
     def toggle_loop(self, checked):
