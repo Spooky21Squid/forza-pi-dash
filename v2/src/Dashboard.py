@@ -62,10 +62,7 @@ class SettingsWidget(QtWidgets.QFrame):
 
 
 class DisplayWidget(QtWidgets.QFrame):
-    """
-    Displays the main dashboard and controls the threads responsible for
-    collecting UDP packets
-    """
+    """Displays the main dashboard"""
 
     def __init__(self):
         super().__init__()
