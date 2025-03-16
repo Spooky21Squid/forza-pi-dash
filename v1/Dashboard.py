@@ -12,29 +12,26 @@ from math import floor
 
 
 logging.basicConfig(level=logging.INFO)
+port = None
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.setblocking(0)  # Set to non blocking, so thread can be terminated without socket blocking forever
-sock.bind(('', 1337))
-timeout = 2
 
 """
 Holds the configuration options and preferences for the dashboard that adjust
 things like units (metric, imperial), redline % etc. These are held in an external
 yaml configuration file which is read and used to update the config object
 either when the program is first started, or when the user changes and closes
-the settings widget.
+the settings widget (not currently implemented).
 """
 dashConfig: dict = None
-dashConfigFilePath = "config/dashboardConfig.yaml"
+dashConfigFilePath = "../config/dashboardConfig.yaml"
 
 """
 Holds possible parameters names, units and conversion factors. Is updated
 once when the program starts, or when the user changes and closes the
-settings widget.
+settings widget (not currently implemented).
 """
 paramConfig: dict = None
-paramConfigFilePath = "config/paramConfig.yaml"
+paramConfigFilePath = "../config/paramConfig.yaml"
 
 def updateDashConfig(configFile: str):
     """
@@ -54,8 +51,33 @@ def updateParamConfig(configFile: str):
     with open(configFile) as f:
         paramConfig = yaml.safe_load(f)
 
+# Tries to read the parameter config file
+try:
+    updateParamConfig(paramConfigFilePath)
+except:
+    logging.info("Unable to open {}, reverting to defaults.".format(paramConfigFilePath))
+
+# Tries to read the dash config file and set the port to receive forza UDP packets
+try:
+    updateDashConfig(dashConfigFilePath)
+    port = dashConfig.get("port", None)
+except:
+    logging.info("Unable to open {}, reverting to defaults.".format(dashConfigFilePath))
+    port = 1337  # A default port
+
+
+# Initialises the socket that listens for packets
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.setblocking(0)  # Set to non blocking, so thread can be terminated without socket blocking forever
+sock.bind(('', port))
+timeout = 1
+
 
 class Worker(QObject):
+    """
+    Listens for incoming forza UDP packets and communicates to QWidgets when
+    a packet is collected
+    """
     finished = Signal()
     collected = Signal(bytes)
 
@@ -65,6 +87,7 @@ class Worker(QObject):
         self.working = True
 
     def work(self):
+        logging.info("Started listening...")
         while self.working:
             try:
                 ready = select.select([sock], [], [], timeout)
@@ -72,20 +95,16 @@ class Worker(QObject):
                     data, address = sock.recvfrom(1024)
                     logging.debug('received {} bytes from {}'.format(len(data), address))
                     self.collected.emit(data)
-                #data, address = sock.recvfrom(1024)
-                #print('received {} bytes from {}'.format(len(data), address))
-                #time.sleep(0.05)
-                #self.collected.emit(data)
             except BlockingIOError:
                 logging.info("Could not listen to {}, trying again...".format(address))
-                #time.sleep(1)
-                pass
                 
-
         self.finished.emit()
 
 
 class GearIndicator(QtWidgets.QLCDNumber):
+    """
+    Represents the central colour changing gear indicator
+    """
     def __init__(self):
         super().__init__()
         self.initWidget()
@@ -99,7 +118,7 @@ class GearIndicator(QtWidgets.QLCDNumber):
         READY = 2
         CHANGE = 3
     
-    #@Slot(GearChange)
+    # Used to determine the background colour
     def changeState(self, state: GearChange):
         if state == self.GearChange.CHANGE:
             self.setProperty("change", True)
@@ -120,21 +139,19 @@ class GearIndicator(QtWidgets.QLCDNumber):
 
 
 class Dashboard(QtWidgets.QFrame):
+    """
+    The parent widget for the dashboard, containing all the logic for updating the widgets
+    """
     def __init__(self):
         super().__init__()
 
         self.worker = None
         self.thread = None
 
-        # Used for testing - does nothing with a new packet if true, to slow
-        # down updating the display
-        self.discardData = False
-
         self.paramDict = {}
 
-        # Stores the % fuel left over the last 4 laps
-        # When the first packet is collected, all indexes are initialised with
-        # the current fuel level.
+        # Stores the % fuel left over the last 4 laps - used to collect an average and display as the fuel per lap.
+        # When the first packet is collected, all indexes are initialised with the current fuel level.
         self.fuelLevelHistory = [0, 0, 0, 0]
 
         # The last received packet as a fdp object
@@ -142,12 +159,12 @@ class Dashboard(QtWidgets.QFrame):
 
         self.initWidget()
     
-
     def getAverageFuelUsage(self):
-        """Gets the average fuel usage over the last 3 laps"""
+        """Gets the average fuel usage over the last 3 laps using the fuelLevelHistory list"""
 
         totalUsed = 0
         lapCount = 0
+
         for i in range(1, 4):
             used = self.fuelLevelHistory[i - 1] - self.fuelLevelHistory[i]
             if used > 0:
@@ -159,45 +176,40 @@ class Dashboard(QtWidgets.QFrame):
         
         return totalUsed / lapCount
 
-    
     def initWidget(self):
-
-        try:
-            updateParamConfig(paramConfigFilePath)
-        except:
-            logging.info("Unable to open {}, reverting to defaults.".format(paramConfigFilePath))
 
         # Tries to read the dashboard config file. If unsuccessful, widgets will
         # fall back to the default units sent by Forza
         try:
-            updateDashConfig(dashConfigFilePath)
-
             # Populate the customisable parameter widgets with the parameters from
             # the config file
             if 'parameterList' in dashConfig:
                 count = 1
                 for p in dashConfig['parameterList']:
                     p: dict
-                    if count > 4:  # Any more parameters will be ignored
+                    if count > 4:  # Any more parameters will be ignored to save space
                         break
                     if paramConfig:
                         pName = paramConfig.get(p).get("label")
-                    #pName = p.replace("_", " ")
                     self.paramDict[p] = ParamWidget(p, pName)
                     count += 1
                 while count <= 4:
-                    self.paramDict[str(count)] = ParamWidget("", "", "")  # Populate the rest of the grid with blank widgets
+                    # Populate the rest of the grid with blank widgets if there are less than 4
+                    self.paramDict[str(count)] = ParamWidget("", "", "")
                     count += 1
         except:
-            logging.info("Unable to open {}, reverting to defaults.".format(dashConfigFilePath))
+            #logging.info("Unable to open {}, reverting to defaults.".format(dashConfigFilePath))
+            pass
 
         self.resize(800, 480)  # Raspberry Pi touchscreen resolution
 
+        # Start button on the top left
         self.listenButton = QtWidgets.QPushButton("Start")
         self.listenButton.setCheckable(True)  # make toggleable
         self.listenButton.clicked.connect(self.toggle_loop)
         self.listenButton.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
         
+        # Settings button (not currently implemented - see the config files)
         self.settingsButton = QtWidgets.QPushButton("Settings")
         self.settingsButton.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
 
@@ -239,7 +251,7 @@ class Dashboard(QtWidgets.QFrame):
         centreLayout.setSpacing(3)
         centreLayout.setContentsMargins(0,0,0,0)
 
-        # Left side
+        # Left side of the dashboard
         centreLayout.addWidget(self.listenButton, 0, 0)
         centreLayout.addWidget(self.settingsButton, 0, 1)
         centreLayout.addWidget(self.positionWidget, 1, 0)
@@ -256,7 +268,7 @@ class Dashboard(QtWidgets.QFrame):
             row += 1
         del row
 
-        # Right Side
+        # Right Side of the dashboard
         centreLayout.addWidget(self.lastLapTimeWidget, 0, 3, 1, 2)
         centreLayout.addWidget(self.bestLapTimeWidget, 1, 3, 1, 2)
         centreLayout.addWidget(self.interval, 2, 3, 1, 2)
@@ -272,43 +284,46 @@ class Dashboard(QtWidgets.QFrame):
         mainLayout.setContentsMargins(0,0,0,0)
         self.setLayout(mainLayout)
 
-        # Just to test
-        self.slipRL.setValue(50)
-        self.brakeWidget.setValue(50)
-        self.accelWidget.setValue(50)
+        # Progress bars start out with some initial values just to test they work
+        #self.slipRL.setValue(50)
+        #self.brakeWidget.setValue(50)
+        #self.accelWidget.setValue(50)
     
     def loop_finished(self):
         logging.info("Finished listening.")
 
-        ## Reset the tire slip indicator bars
+        # Reset the tire slip indicator bars
         self.slipRR.reset()
         self.slipRL.reset()
 
-    """Updates all the widgets
-    """
+        # Reset the accel/brake bars
+        self.accelWidget.reset()
+        self.brakeWidget.reset()
+
     def onCollected(self, data):
+        """
+        Updates all the widgets in the dashboard after a packet is collected
+        """
         logging.debug("Received Data")
-        if self.discardData:
-            self.discardData = not self.discardData
-            return
-        self.discardData = not self.discardData
         fdp = ForzaDataPacket(data)
         if fdp.is_race_on:
-
             self.gearIndicator.display(fdp.gear)
 
-            if fdp.current_engine_rpm / fdp.engine_max_rpm >= 0.8:
+            # Changes the gear indicator colour based on percentages from dashConfig
+            redlinePercent = dashConfig.get("redlinePercent", 85) * 0.01
+            readyPercent = dashConfig.get("readyPercent", 75) * 0.01
+
+            if fdp.current_engine_rpm / fdp.engine_max_rpm >= redlinePercent:
                 self.gearIndicator.changeState(GearIndicator.GearChange.CHANGE)
-            elif fdp.current_engine_rpm / fdp.engine_max_rpm >= 0.75 and fdp.current_engine_rpm / fdp.engine_max_rpm < 0.8:
+            elif fdp.current_engine_rpm / fdp.engine_max_rpm >= readyPercent and fdp.current_engine_rpm / fdp.engine_max_rpm < redlinePercent:
                 self.gearIndicator.changeState(GearIndicator.GearChange.READY)
             else:
                 self.gearIndicator.changeState(GearIndicator.GearChange.STAY)
-            
-            
-            # Update the customisable widgets
+             
+            # Updates the customisable widgets
             # Matches the user's chosen units (imperial, metric etc) to values stored
             # in the param config file and does any conversions or formatting before
-            # sending the value to the widget to display
+            # sending the value to the widget to display.
             for p, w in self.paramDict.items():
                 w: ParamWidget
                 val = getattr(fdp, p, 0)
@@ -330,7 +345,7 @@ class Dashboard(QtWidgets.QFrame):
             self.slipRL.setValue(int(fdp.tire_combined_slip_RL * 10))
             self.slipRR.setValue(int(fdp.tire_combined_slip_RR * 10))
 
-            # Update Pos, Lap, Dist, last and current lap time widgets
+            # Update Pos, Lap, and Dist widgets
             pos = fdp.race_pos
             self.positionWidget.update(pos)
 
@@ -355,9 +370,10 @@ class Dashboard(QtWidgets.QFrame):
             self.bestLapTimeWidget.update("{}:{}.{}".format(int(minutes), int(seconds), mseconds))
 
             # interval
+            # All the logic for maintaining the interval is found in the Interval class
             self.interval.update(fdp)
             currentInterval = self.interval.getInterval()
-            logging.info("Interval: {:.10f}, Lap Dist: {:.5f}, Lap Time: {:.5f}".format(currentInterval, self.interval.currentPoint[0], self.interval.currentPoint[1]))
+            logging.debug("Interval: {:.10f}, Lap Dist: {:.5f}, Lap Time: {:.5f}".format(currentInterval, self.interval.currentPoint[0], self.interval.currentPoint[1]))
             minutes, seconds = divmod(abs(currentInterval), 60)
             mseconds = str(seconds - floor(seconds))  # gets us the decimal part
             mseconds = mseconds[2:5]
@@ -389,18 +405,13 @@ class Dashboard(QtWidgets.QFrame):
                 widget.wear.setText("{}%".format(int(getattr(fdp, "tire_wear_{}".format(tire)) * 100)))
                 tireTemp = getattr(fdp, "tire_temp_{}".format(tire))
                 tireTemp = float(self.convertUnits("tire_wear_{}".format(tire), tireTemp))
-                #palette = widget.tireIcon.palette()
                 if tireTemp <= blueTemp:
-                    #palette.setColor(widget.foregroundRole(), QColor(0, 0, 255))
                     widget.tireIcon.setStyleSheet("border: 3px solid blue;")
                 elif tireTemp >= redTemp:
-                    #palette.setColor(widget.foregroundRole(), QColor(255, 0, 0))
                     widget.tireIcon.setStyleSheet("border: 3px solid red;")
                 elif tireTemp >= yellowTemp:
-                    #palette.setColor(widget.foregroundRole(), QColor(255, 255, 0))
                     widget.tireIcon.setStyleSheet("border: 3px solid yellow;")
                 else:
-                    #palette.setColor(widget.foregroundRole(), QColor(255, 255, 255))
                     widget.tireIcon.setStyleSheet("border: 3px solid green;")
             
             # Fuel widget
@@ -424,7 +435,7 @@ class Dashboard(QtWidgets.QFrame):
                 self.fuelWidget.lapsLeft.update(self.convertUnits("fuel", lapsLeft))
 
             # Display small pit warning if laps left <= 1
-            if lapsLeft <= 1 and usage:
+            if ((lapsLeft <= 1 and usage) or fuel == 0) and dashConfig.get("pitWarning"):
                 self.fuelWidget.pitNow.setStyleSheet("background-color: lightgrey;")
             else:
                 self.fuelWidget.pitNow.setStyleSheet("background-color: black;")
@@ -433,7 +444,11 @@ class Dashboard(QtWidgets.QFrame):
     def convertUnits(self, paramName: str, paramValue):
         """
         Converts a parameter from the default units to the current
-        units and returns as a string
+        units using the conversion factors found in paramConfig and
+        returns as a string
+
+        paramName is the forza-returned name
+        paramValue is the default forza-returned value
         """
         global paramConfig
         global dashConfig
@@ -450,28 +465,28 @@ class Dashboard(QtWidgets.QFrame):
         val = fs.format(paramValue)
         return val
 
-    """ Starts/stops listening for Forza UDP packets
-    """
     @Slot()
     def toggle_loop(self, checked):
+        """
+        Starts/stops listening for Forza UDP packets
+        """
         if not checked:
             self.worker.working = False
-            print("worker set to false")
+            logging.debug("Worker set to false")
             self.thread.quit()
         else:
-            print("thread is started")
-            self.worker = Worker()  # a new worker to perform those tasks
-            self.thread = QThread()  # a new thread to run our background tasks in
+            logging.debug("Thread started")
+            self.worker = Worker()  # a new worker
+            self.thread = QThread()  # a new thread to listen for packets
             self.worker.moveToThread(self.thread)
             # move the worker into the thread, do this first before connecting the signals
             self.thread.started.connect(self.worker.work)
-            # begin our worker object's loop when the thread starts running
-            
+            # begin worker object's loop when the thread starts running
             self.worker.collected.connect(self.onCollected)  # Update the widgets every time a packet is collected
-            self.worker.finished.connect(self.loop_finished)  # do something in the gui when the worker loop ends
+            self.worker.finished.connect(self.loop_finished)  # Do something when the worker loop ends
 
-            self.worker.finished.connect(self.thread.quit)  # tell the thread it's time to stop running
-            self.worker.finished.connect(self.worker.deleteLater)  # have worker mark itself for deletion
-            self.thread.finished.connect(self.thread.deleteLater)  # have thread mark itself for deletion
-            # make sure those last two are connected to themselves or you will get random crashes
+            self.worker.finished.connect(self.thread.quit)  # Tell the thread to stop running
+            self.worker.finished.connect(self.worker.deleteLater)  # Have worker mark itself for deletion
+            self.thread.finished.connect(self.thread.deleteLater)  # Have thread mark itself for deletion
+            # Make sure those last two are connected to themselves or you will get random crashes
             self.thread.start()

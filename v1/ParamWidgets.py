@@ -4,19 +4,18 @@ from enum import Enum
 from fdp import ForzaDataPacket
 import logging
 
-"""A compund widget that simply Displays the name of a parameter, and the value of
-that parameter next to it. Eg. tire_temp_FL displays the tempatarure
-of the front left tire. They can be simply organised vertically
-or horizontally, like blocks.
 
-Individual parameters with complex requirements such as
-number formatting or metric/imperial conversion should
-inherit and extend this class.
-
-paramName: The configuration name of the parameter
-paramLabel: The user-friendly label for the widget
-paramValue: The value the parameter currently holds"""
 class ParamWidget(QtWidgets.QFrame):
+    """
+    A compund widget that simply Displays the name of a parameter, and the value of
+    that parameter next to it. Eg. tire_temp_FL displays the tempatarure
+    of the front left tire. They can be simply organised vertically
+    or horizontally, like blocks.
+
+    paramName: The configuration name of the parameter
+    paramLabel: The user-friendly label for the widget
+    paramValue: The value the parameter currently holds
+    """
     def __init__(self, paramName: str, paramLabel: str, paramValue = "0"):
         super().__init__()
 
@@ -32,14 +31,15 @@ class ParamWidget(QtWidgets.QFrame):
         layout.addWidget(self.paramValue)
         self.setLayout(layout)
     
-    """ Updates the displayed parameter's value. Override this
-    method to perform any conversion/formatting"""
     def update(self, value):
+        """
+        Updates the displayed parameter's value
+        """
         self.paramValue.setText(str(value))
 
 
-"""Displays the amount of tire slip of one wheel as a vertical bar"""
 class TireSlipWidget(QtWidgets.QProgressBar):
+    """Displays the amount of tire slip of one wheel as a vertical bar"""
     def __init__(self):
         super().__init__()
         self.initWidget()
@@ -52,6 +52,7 @@ class TireSlipWidget(QtWidgets.QProgressBar):
 
 
 class AccelBrakeWidget(QtWidgets.QProgressBar):
+    """Displays the amount of accel/brake input as a vertical bar"""
     def __init__(self):
         super().__init__()
         self.initWidget()
@@ -65,6 +66,7 @@ class AccelBrakeWidget(QtWidgets.QProgressBar):
 
 
 class SingleTireWidget(QtWidgets.QFrame):
+    """Represents a single tire temp/wear combo inside the large tire widget"""
 
     # Does it represent a tire on the left or right side of the car
     class Orientation(Enum):
@@ -94,6 +96,7 @@ class SingleTireWidget(QtWidgets.QFrame):
 
 
 class TireWidget(QtWidgets.QFrame):
+    """The widget holding all the individual tire widgets"""
     def __init__(self):
         super().__init__()
         layout = QtWidgets.QGridLayout()
@@ -112,6 +115,7 @@ class TireWidget(QtWidgets.QFrame):
 
 
 class FuelWidget(QtWidgets.QFrame):
+    """Contains all the fuel information widgets and pit now message"""
     def __init__(self):
         super().__init__()
         layout = QtWidgets.QVBoxLayout()
@@ -144,9 +148,7 @@ class FuelWidget(QtWidgets.QFrame):
 
 
 class IntervalWidget(QtWidgets.QLabel):
-    """
-    Maintains all the data related to the interval.
-    """
+    """Maintains all the data related to the interval"""
 
     def __init__(self):
         super().__init__("0.000")
@@ -154,42 +156,42 @@ class IntervalWidget(QtWidgets.QLabel):
         self.currentLap = -1
         self.syncLap = 0  # The lap the player needs to reach to begin recording intervals
         self.currentPoint = None
-        self.accuracy = 20
-        self.distanceFactor = 0
+        self.distanceFactor = 0  # The distance to take away to get current lap distance
         
-        # Stores a list of (lapDistance:int, lapTime:float) points, where lapDistance
-        # is the distance traveled during that lap in metres, and lapTime is the current lap time recorded at
-        # that distance in seconds
+        # Stores a list of (lapDistance:float, lapTime:float) points, where lapDistance
+        # is the distance traveled during that lap in metres, and lapTime is the current
+        # lap time recorded at that distance in seconds
         self.bestLapPoints = list()
         self.currentLapPoints = list()
 
-        self.interval: float = None
+        self.interval: float = None  # The current up to date interval
 
     def insertPoint(self):
         """
         Inserts the current point into the currentLapPoints list. If the distance
-        recorded is less or equal than the previous packet, it is ignored.
+        recorded is less or equal than the previous packet, it is ignored. If it is
+        negative (hasn't crossed the line after starting the race), it is ignored.
         """
-        if len(self.currentLapPoints) == 0 or self.currentPoint[0] > self.currentLapPoints[-1][0]:
+        if len(self.currentLapPoints) == 0 or self.currentPoint[0] > self.currentLapPoints[-1][0] or self.currentPoint[0] < 0:
             self.currentLapPoints.append(self.currentPoint)
     
     def updateInterval(self):
         """
         Updates the current interval by comparing the current point's lap time to
-        the best lap's corresponding sector time
+        the closest point's lap time in the bestLapTime list
         """
 
         if len(self.bestLapPoints) == 0:
             self.interval = 0
             return
 
-        currentTime = self.currentPoint[1]  # In seconds
+        currentTime = self.currentPoint[1]
         currentDistance = self.currentPoint[0]
 
         # Search for the closest best lap point
         # Could use binary search but for now just use linear
 
-        bestDifference = 99999999
+        bestDifference = 9999999999999
         bestPointIndex = 0
 
         currentIndex = 0
@@ -206,7 +208,6 @@ class IntervalWidget(QtWidgets.QLabel):
         bestPoint = self.bestLapPoints[bestPointIndex]
         self.interval = currentTime - bestPoint[1]  # negative is Faster
         
-
     def update(self, fdp: ForzaDataPacket):
         """
         Updates the Interval object with the latest packet
@@ -224,16 +225,16 @@ class IntervalWidget(QtWidgets.QLabel):
         self.currentPoint = (lapDistance, currentLapTime)
 
         if playerLap == self.currentLap:
-            # Log the current point if the player is at the start of a new mini sector
+            # Log the current point
 
-            #if int(lapDistance) % self.accuracy == 0:
             self.insertPoint()
             self.updateInterval()
-            #logging.info("Interval update: {:.2f} (Cur Lap)".format(self.interval))
+            logging.debug("Interval update: {:.2f} (Cur Lap)".format(self.interval))
 
         elif playerLap == self.currentLap + 1:
             
-            # If the player stopped listening on the prev lap and started again on the next lap
+            # If the player stopped listening on the prev lap and started again on the next lap,
+            # making the time logs inconsistent with the game
             if currentLapTime > 1:
                 self.currentLap = -1
                 self.currentLapPoints = []
@@ -246,12 +247,14 @@ class IntervalWidget(QtWidgets.QLabel):
             # and still display an interval, and also to allow a useful interval to be
             # displayed when using non-forza-clean limits (eg. some Tora races), but this
             # can be changed
-            if self.bestLap is None or self.bestLap <= 0 or fdp.last_lap_time < self.bestLap:  # If player just set a new best lap
-                logging.info("Interval: Best Lap! {}".format(fdp.last_lap_time))
+
+            # If player just set a new best lap
+            if self.bestLap is None or self.bestLap <= 0 or fdp.last_lap_time < self.bestLap:
+                logging.debug("Interval: Best Lap! {}".format(fdp.last_lap_time))
                 self.bestLapPoints = self.currentLapPoints.copy()
                 self.bestLap = fdp.last_lap_time
             else: # If player didn't set a best lap
-                logging.info("Interval: New Lap. {}".format(fdp.last_lap_time))
+                logging.debug("Interval: New Lap. {}".format(fdp.last_lap_time))
             self.currentLapPoints.clear()
 
             # update the distance factor and thus the current point's distance
@@ -262,11 +265,11 @@ class IntervalWidget(QtWidgets.QLabel):
             self.insertPoint()
             self.currentLap += 1
             self.updateInterval()
-            logging.info("Interval update: {:.2f} (New Lap)".format(self.interval))
+            logging.debug("Interval update: {:.2f} (New Lap)".format(self.interval))
 
         else:  # player lap is not consistent with self.currentLap (eg. started recording in the middle of a session)
             if playerLap == self.syncLap:
-                logging.info("Interval: Synced Laps")
+                logging.debug("Interval: Synced Laps")
                 # player has reached new sync lap, update object and start recording
                 self.currentLapPoints.clear()
 
@@ -278,7 +281,7 @@ class IntervalWidget(QtWidgets.QLabel):
                 self.insertPoint()
                 self.currentLap = self.syncLap
                 self.updateInterval()
-                logging.info("Interval update: {:.2f} (Sync)".format(self.interval))
+                logging.debug("Interval update: {:.2f} (Sync)".format(self.interval))
             else:  # Keep ignoring the lap times until the player reaches a new lap
                 self.syncLap = playerLap + 1
         

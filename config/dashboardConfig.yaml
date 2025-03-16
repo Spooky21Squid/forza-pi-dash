@@ -41,7 +41,7 @@ unitOptions:
   - default
   - imperial
   - metric
-units: imperial
+units: default
 redlinePercent: 85
 readyPercent: 75
 tireTempBlue: 160
@@ -49,7 +49,7 @@ tireTempYellow: 240
 tireTempRed: 330
 pitWarning: True
 parameterList:
-  - dist_traveled
-  - boost
+  - speed
+  - current_engine_rpm
   - power
-  - last_lap_time
+  - boost

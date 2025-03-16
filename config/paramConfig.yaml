@@ -36,16 +36,19 @@ engine_max_rpm:
   label: Max RPM
   units:
     default: rpm
+  dp: 0
 
 engine_idle_rpm:
   label: Idle RPM
   units:
     default: rpm
+  dp: 0
 
 current_engine_rpm:
   label: RPM
   units:
     default: rpm
+  dp: 0
 
 acceleration_x:
   label: X Acc
@@ -377,15 +380,19 @@ race_pos:
 
 accel:
   label: Accel
+  dp: 0
 
 brake:
   label: Brake
+  dp: 0
 
 clutch:
   label: Clutch
+  dp: 0
 
 handbrake:
   label: H.brake
+  dp: 0
 
 gear:
   label: Gear

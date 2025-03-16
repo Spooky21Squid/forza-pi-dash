@@ -6,8 +6,4 @@ packet_format: dash
 motec: True
 parameter_list:
   - timestamp_ms
-  - current_engine_rpm
-  - speed
-  - accel
-  - brake
   - lap_no

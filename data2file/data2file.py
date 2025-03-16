@@ -12,7 +12,7 @@ import socket
 import yaml
 import datetime as dt
 
-from fdp import ForzaDataPacket
+from v1.fdp import ForzaDataPacket
 
 def to_str(value):
     '''

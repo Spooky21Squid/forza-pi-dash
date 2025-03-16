@@ -1,6 +1,13 @@
 import sys
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtWidgets
 from Dashboard import Dashboard
+
+"""
+The main file to run the forza pi dashboard.
+
+Make sure to install all the required packages from requirements.txt, and make sure
+all config files are present and well-formed.
+"""
 
 
 def run():
@@ -9,7 +16,7 @@ def run():
     db.show()
 
     # Add multiple stylesheets in the order they need to be concatonated
-    stylesheets = ["stylesheets/Dashboard.qss"]
+    stylesheets = ["../stylesheets/Dashboard.qss"]
     style = ""
 
     for sheet in stylesheets:
