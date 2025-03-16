@@ -86,8 +86,8 @@ class DisplayWidget(QtWidgets.QFrame):
 
 class Dashboard(QtWidgets.QMainWindow):
     """
-    The parent widget for the dashboard, containing all the tabs needed to
-    operate the dashboard (settings and display)
+    The parent widget for the dashboard which contains a stacked widget with all the
+    tabs (Display, Settings) and controls the threads responsible for listening to packets
     """
 
     class TabIndex(Enum):
@@ -104,6 +104,8 @@ class Dashboard(QtWidgets.QMainWindow):
 
         self.dashConfig = dict()
         self.paramConfig = dict()
+
+        self.ip = ""
 
         self.resize(800, 480)
 

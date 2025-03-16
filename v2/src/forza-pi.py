@@ -37,6 +37,7 @@ def run(ip: str, dashConfig:dict, paramConfig:dict, style:str):
     app = QtWidgets.QApplication(sys.argv)
     db = Dashboard()
     db.updateConfig(dashConfig, paramConfig)
+    db.ip = ip
     db.show()
     
     if style != "":
@@ -61,12 +62,22 @@ if __name__ == "__main__":
     except FileNotFoundError:
         logging.info("Unable to open dashConfig.yaml")
         exit(0)
+    
+    dashConfig = {}  # Remove (for testing only) ---------------------------------------------------------
+    if dashConfig is None:
+        logging.info("dashConfig.yaml is empty")
+        exit(0)
 
     try:
         with open(paramConfigPath) as f:
             paramConfig = yaml.safe_load(f)
     except FileNotFoundError:
         logging.info("Unable to open paramConfig.yaml")
+        exit(0)
+    
+    paramConfig = {}  # Remove (for testing only) ---------------------------------------------------------
+    if paramConfig is None:
+        logging.info("paramConfig.yaml is empty")
         exit(0)
     
     # Tries to read the stylesheets
