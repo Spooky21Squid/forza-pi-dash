@@ -51,5 +51,5 @@ pitWarning: True
 parameterList:
   - speed
   - current_engine_rpm
-  - power
+  - gear
   - boost
