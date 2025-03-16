@@ -47,9 +47,46 @@ class Worker(QObject):
         self.finished.emit()
 
 
-class Dashboard(QtWidgets.QFrame):
+class SettingsWidget(QtWidgets.QFrame):
+    """The widget for the settings pane"""
+
+    def __init__(self):
+        super().__init__()
+
+        self.closeButton = QtWidgets.QPushButton("Close")
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.closeButton)
+        self.setLayout(layout)
+
+
+class DisplayWidget(QtWidgets.QFrame):
     """
-    The parent widget for the dashboard, containing all the logic for updating the widgets
+    Displays the main dashboard and controls the threads responsible for
+    collecting UDP packets
+    """
+
+    def __init__(self):
+        super().__init__()
+
+        self.listenButton = QtWidgets.QPushButton("START")
+        self.listenButton.setCheckable(True)  # Make toggleable
+        #self.listenButton.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
+
+        self.settingsButton = QtWidgets.QPushButton("SETTINGS")
+        self.resetButton = QtWidgets.QPushButton("RESET")
+
+        buttonLayout = QtWidgets.QHBoxLayout()
+        buttonLayout.addWidget(self.listenButton)
+        buttonLayout.addWidget(self.settingsButton)
+        buttonLayout.addWidget(self.resetButton)
+        self.setLayout(buttonLayout)
+
+
+class Dashboard(QtWidgets.QMainWindow):
+    """
+    The parent widget for the dashboard, containing all the tabs needed to
+    operate the dashboard (settings and display)
     """
     def __init__(self):
         super().__init__()
@@ -62,20 +99,30 @@ class Dashboard(QtWidgets.QFrame):
 
         self.resize(800, 480)
 
-        self.listenButton = QtWidgets.QPushButton("START")
-        self.listenButton.setCheckable(True)  # Make toggleable
-        self.listenButton.clicked.connect(self.toggle_loop)
-        #self.listenButton.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
+        self.display = DisplayWidget()
+        self.settings = SettingsWidget()
+        self.stack = QtWidgets.QStackedWidget()
+        self.stack.addWidget(self.display)
+        self.stack.addWidget(self.settings)
+        self.setCentralWidget(self.stack)
 
-        self.settingsButton = QtWidgets.QPushButton("SETTINGS")
-        self.resetButton = QtWidgets.QPushButton("RESET")
+        # Connect the signals to change between settings and display
+        self.display.settingsButton.clicked.connect(self.changeToSettingsTab)
+        self.settings.closeButton.clicked.connect(self.changeToDisplayTab)
 
-        buttonLayout = QtWidgets.QHBoxLayout()
-        buttonLayout.addWidget(self.listenButton)
-        buttonLayout.addWidget(self.settingsButton)
-        buttonLayout.addWidget(self.resetButton)
-        self.setLayout(buttonLayout)
+        # So the listen button triggers the thread
+        self.display.listenButton.clicked.connect(self.toggle_loop)
 
+    @Slot()
+    def changeToSettingsTab(self):
+        """Changes the current tab to the settings tab"""
+        self.stack.setCurrentIndex(1)
+    
+    @Slot()
+    def changeToDisplayTab(self):
+        """Changes the current tab to the display tab"""
+        self.stack.setCurrentIndex(0)
+    
     @Slot()
     def toggle_loop(self, checked):
         """
@@ -83,12 +130,16 @@ class Dashboard(QtWidgets.QFrame):
         """
         if not checked:
             # Disable the button until the thread's socket times out, and the thread is terminated
-            self.listenButton.setEnabled(False)
+            self.display.listenButton.setEnabled(False)
             self.worker.working = False
             logging.debug("Worker set to false")
             self.thread.quit()
         else:
             logging.debug("Thread started")
+
+            # Disable the settings and reset until player stops listening for packets
+            self.display.settingsButton.setEnabled(False)
+            self.display.resetButton.setEnabled(False)
             self.worker = Worker(self.dashConfig["port"])  # a new worker
             self.thread = QThread()  # a new thread to listen for packets
             self.worker.moveToThread(self.thread)
@@ -111,7 +162,9 @@ class Dashboard(QtWidgets.QFrame):
     def loop_finished(self):
         """Called after the port is closed and the dashboard stops listening to packets"""
         logging.info("Finished listening")
-        self.listenButton.setEnabled(True)
+        self.display.listenButton.setEnabled(True)
+        self.display.settingsButton.setEnabled(True)
+        self.display.resetButton.setEnabled(True)
 
     def updatePort(newPort:int):
         """Updates the port that listens for forza UDP packets"""
