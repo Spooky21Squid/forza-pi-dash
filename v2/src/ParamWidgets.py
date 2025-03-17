@@ -25,7 +25,9 @@ class ParamWidget(QtWidgets.QFrame):
 
         self.paramName = paramName
         self.paramLabel = QtWidgets.QLabel(paramLabel)
+        self.paramLabel.setObjectName("paramLabel")
         self.paramValue = QtWidgets.QLabel(paramValue)
+        self.paramValue.setObjectName("paramValue")
 
         self.paramLabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         #self.paramValue.setAlignment(Qt.AlignCenter)
@@ -98,13 +100,20 @@ class SpeedWidget(QtWidgets.QFrame):
     def __init__(self):
         super().__init__()
 
+        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+
         self.value = QtWidgets.QLabel("0")
         self.units = QtWidgets.QLabel("mph")
+
+        self.value.setObjectName("speedValue")
+        self.units.setObjectName("speedUnits")
 
         self.units.setAlignment(Qt.AlignCenter)
         self.value.setAlignment(Qt.AlignCenter)
 
         layout = QtWidgets.QVBoxLayout()
+        layout.setSpacing(0)
+        layout.setContentsMargins(0,0,0,0)
         layout.addWidget(self.value)
         layout.addWidget(self.units)
         self.setLayout(layout)
@@ -144,7 +153,7 @@ class SingleTireWidget(QtWidgets.QFrame):
         
         # Shows the temperature by changing the border colour of the box
         self.tireIcon = QtWidgets.QFrame(frameShape=QtWidgets.QFrame.Box)
-        #self.tireIcon.setObjectName("tire")
+        self.tireIcon.setObjectName("tire")
 
         # Shows tire wear as a percentage
         self.wear = QtWidgets.QLabel("0%")
@@ -299,13 +308,21 @@ class IntervalWidget(QtWidgets.QFrame):
 
     def __init__(self):
         super().__init__()
+
+        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+
         self.interval = QtWidgets.QLabel("0.000")
         self.label = QtWidgets.QLabel("delta")
+
+        self.interval.setObjectName("intervalValue")
+        self.label.setObjectName("intervalLabel")
 
         self.interval.setAlignment(Qt.AlignCenter)
         self.label.setAlignment(Qt.AlignCenter)
 
         layout = QtWidgets.QVBoxLayout()
+        layout.setSpacing(0)
+        layout.setContentsMargins(0,0,0,0)
         layout.addWidget(self.interval)
         layout.addWidget(self.label)
         self.setLayout(layout)
@@ -458,7 +475,10 @@ class AlertWidget(QtWidgets.QLabel):
         super().__init__(text)
         sp = QtWidgets.QSizePolicy()
         sp.setRetainSizeWhenHidden(True)
+        sp.setHorizontalPolicy(QtWidgets.QSizePolicy.Expanding)
+        sp.setVerticalPolicy(QtWidgets.QSizePolicy.Expanding)
         self.setSizePolicy(sp)
+        self.setAlignment(Qt.AlignCenter)
     
     @Slot()
     def showHide(self, hide: bool):

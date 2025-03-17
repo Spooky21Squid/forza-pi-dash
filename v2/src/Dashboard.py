@@ -1,5 +1,5 @@
 from PySide6 import QtWidgets
-from PySide6.QtCore import Slot, QThread, QObject, Signal
+from PySide6.QtCore import Slot, QThread, QObject, Signal, Qt
 
 from ParamWidgets import TireSlipWidget, ParamWidget, CompoundTireWidget, GearWidget, SpeedWidget, IntervalWidget, AlertWidget, FuelWidget
 
@@ -85,6 +85,15 @@ class DisplayWidget(QtWidgets.QFrame):
         centreLayout = QtWidgets.QVBoxLayout()  # Centre column, grouping gear, speed and delta
         rightLayout = QtWidgets.QVBoxLayout()  # Right column, grouping time and fuel
 
+        # Styling the layouts ---------------------------
+
+        mainLayout.setSpacing(0)
+        mainLayout.setContentsMargins(0,0,0,0)
+        middleLayout.setSpacing(0)
+        middleLayout.setContentsMargins(0,0,0,0)
+        leftLayout.setSpacing(0)
+        leftLayout.setContentsMargins(0,0,0,0)
+
         # Define the widgets ---------------------------
 
         # Top row of buttons
@@ -108,11 +117,13 @@ class DisplayWidget(QtWidgets.QFrame):
         
         # Gear indicator, speed and interval
         self.gear = GearWidget()
+        self.gear.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.speed = SpeedWidget()
         self.interval = IntervalWidget()
 
         # Not racing indicator
         self.notRacing = AlertWidget("NOT RACING")
+        self.notRacing.setObjectName("notRacing")
 
         # Lap time widgets
         self.bestLapTime = ParamWidget("best_lap_time", "BEST")
@@ -121,9 +132,11 @@ class DisplayWidget(QtWidgets.QFrame):
 
         # Fuel widget
         self.fuel = FuelWidget()
+        self.fuel.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
 
         # Small pit now alert box
         self.pitAlert = AlertWidget("PIT THIS LAP")
+        self.pitAlert.setObjectName("pitAlert")
 
         # Connect all the widgets --------------------------
 
@@ -168,9 +181,9 @@ class DisplayWidget(QtWidgets.QFrame):
         leftLayout.addLayout(posLapDistLayout)
         leftLayout.addWidget(self.tires)
 
-        middleLayout.addLayout(leftLayout)
-        middleLayout.addLayout(centreLayout)
-        middleLayout.addLayout(rightLayout)
+        middleLayout.addLayout(leftLayout, 33)
+        middleLayout.addLayout(centreLayout, 33)
+        middleLayout.addLayout(rightLayout, 33)
 
         buttonLayout.addWidget(self.listenButton)
         buttonLayout.addWidget(self.settingsButton)

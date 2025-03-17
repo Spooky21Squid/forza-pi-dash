@@ -1,0 +1,44 @@
+Dashboard {
+    background-color: #181818;
+}
+
+QLabel, QPushButton {
+    color: white;
+    font-family: Audiowide;
+    background-color: grey;
+    border: 0;
+}
+
+QFrame#tire {
+    color: #44e520;
+}
+
+QLabel#paramLabel, QLabel#speedUnits, QLabel#intervalLabel {
+    font-size: 17px;
+}
+
+QLabel#paramValue, QLabel#speedValue, QLabel#intervalValue, QPushButton {
+    font-size: 28px;
+}
+
+GearWidget {
+    font-size: 150px;
+}
+
+QPushButton {
+    padding: 5px 0 5px 0;
+}
+
+AlertWidget {
+    border-radius: 5px;
+    font-size: 20px;
+}
+
+AlertWidget#notRacing {
+    background-color: #d54242;
+}
+
+AlertWidget#pitAlert {
+    background-color: #f9ff4e;
+    color: black;
+}

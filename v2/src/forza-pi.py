@@ -1,5 +1,5 @@
 import sys
-from PySide6 import QtWidgets
+from PySide6 import QtWidgets, QtGui
 from Dashboard import Dashboard
 import socket
 import pathlib
@@ -35,6 +35,13 @@ def getIP():
 
 def run(ip: str, dashConfig:dict, paramConfig:dict, style:str):
     app = QtWidgets.QApplication(sys.argv)
+
+    # Add and check the custom fonts
+    id = QtGui.QFontDatabase.addApplicationFont(str(fontPath))
+    logging.debug("Font id: {}".format(id))
+    families = QtGui.QFontDatabase.applicationFontFamilies(id)
+    logging.debug("Font families: {}".format(families))
+
     db = Dashboard()
     db.updateConfig(dashConfig, paramConfig)
     db.ip = ip
@@ -50,6 +57,9 @@ if __name__ == "__main__":
     logging.info("IP Address: {}".format(ip))
 
     parentDir = pathlib.Path(__file__).parent.parent.resolve()
+
+    # Custom font file path
+    fontPath = parentDir / pathlib.Path("assets") / pathlib.Path("Audiowide-Regular.ttf")
 
     # Tries to read the config files
     dashConfigPath = parentDir / pathlib.Path("config") / pathlib.Path("dashConfig.yaml")
