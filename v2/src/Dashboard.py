@@ -81,7 +81,6 @@ class DisplayWidget(QtWidgets.QFrame):
         middleLayout = QtWidgets.QHBoxLayout()  # Contains the left, centre and right layouts
         posLapDistLayout = QtWidgets.QVBoxLayout()  # Vertical group of pos lap and dist widgets
         lapTimesLayout = QtWidgets.QVBoxLayout()  # Vertical group of lap time widgets
-        fuelLayout = QtWidgets.QVBoxLayout()  # Vertical group of fuel widgets
         leftLayout = QtWidgets.QVBoxLayout()  # Left column, grouping poslapdist and tire widgets
         centreLayout = QtWidgets.QVBoxLayout()  # Centre column, grouping gear, speed and delta
         rightLayout = QtWidgets.QVBoxLayout()  # Right column, grouping time and fuel
@@ -123,6 +122,9 @@ class DisplayWidget(QtWidgets.QFrame):
         # Fuel widget
         self.fuel = FuelWidget()
 
+        # Small pit now alert box
+        self.pitAlert = AlertWidget("PIT THIS LAP")
+
         # Connect all the widgets --------------------------
 
         self.updateSignal.connect(self.slipRight.update)
@@ -143,10 +145,12 @@ class DisplayWidget(QtWidgets.QFrame):
         self.updateSignal.connect(self.currentLapTime.update)
 
         self.updateSignal.connect(self.fuel.update)
+        self.fuel.enoughFuel.connect(self.pitAlert.showHide)
 
         # Add everything to the layouts ---------------------------
         rightLayout.addLayout(lapTimesLayout)
         rightLayout.addWidget(self.fuel)
+        rightLayout.addWidget(self.pitAlert)
         
         lapTimesLayout.addWidget(self.bestLapTime)
         lapTimesLayout.addWidget(self.lastLapTime)

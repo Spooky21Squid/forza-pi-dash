@@ -1,5 +1,5 @@
 from PySide6 import QtWidgets
-from PySide6.QtCore import Qt, Slot
+from PySide6.QtCore import Qt, Slot, Signal
 from fdp import ForzaDataPacket
 from enum import Enum
 from math import floor
@@ -480,6 +480,8 @@ class AlertWidget(QtWidgets.QLabel):
 class FuelWidget(QtWidgets.QFrame):
     """Contains all the fuel information widgets"""
 
+    enoughFuel = Signal(bool)  # False if low fuel
+
     def __init__(self):
         super().__init__()
 
@@ -545,3 +547,8 @@ class FuelWidget(QtWidgets.QFrame):
             lapsLeft =  (fuel / usage) * 100
             fdp.laps_left = lapsLeft
             self.lapsLeft.update(fdp, dashConfig)
+            
+            if lapsLeft <= 1:
+                self.enoughFuel.emit(False)
+            else:
+                self.enoughFuel.emit(True)
