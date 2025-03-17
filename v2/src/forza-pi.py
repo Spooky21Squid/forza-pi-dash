@@ -15,7 +15,7 @@ Make sure to install all the required packages from requirements.txt, and make s
 all config files are present and well-formed.
 """
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 def getIP():
     """Returns the local IP address as a string. If an error is encountered while trying to
@@ -63,7 +63,6 @@ if __name__ == "__main__":
         logging.info("Unable to open dashConfig.yaml")
         exit(0)
     
-    dashConfig = {}  # Remove (for testing only) ---------------------------------------------------------
     if dashConfig is None:
         logging.info("dashConfig.yaml is empty")
         exit(0)

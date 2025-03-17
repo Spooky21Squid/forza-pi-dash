@@ -1,0 +1,9 @@
+port: 1337  # The current port the dashboard is lietening on
+distanceUnits: imperial  # The units of the distance widget
+speedUnits: metric  # The units of the speed widget
+redlinePercent: 85
+readyPercent: 75
+tireTempBlue: 160
+tireTempYellow: 240
+tireTempRed: 330
+pitWarning: True  # Enable to disable the pit warning widget

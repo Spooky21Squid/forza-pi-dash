@@ -1,7 +1,7 @@
 from PySide6 import QtWidgets
 from PySide6.QtCore import Slot, QThread, QObject, Signal
 
-from ParamWidgets import TireSlipWidget, ParamWidget
+from ParamWidgets import TireSlipWidget, ParamWidget, DistanceWidget
 
 from fdp import ForzaDataPacket
 
@@ -68,7 +68,7 @@ class SettingsWidget(QtWidgets.QFrame):
 class DisplayWidget(QtWidgets.QFrame):
     """Displays the main dashboard"""
 
-    updateSignal = Signal(ForzaDataPacket)
+    updateSignal = Signal(ForzaDataPacket, dict)
 
     def __init__(self):
         super().__init__()
@@ -95,9 +95,9 @@ class DisplayWidget(QtWidgets.QFrame):
         # Add the position, lap number and distance widgets
         self.position = ParamWidget("race_pos", "POSITION")
         self.lap = ParamWidget("lap_no", "LAP")
-        self.distance = ParamWidget("dist_traveled", "DISTANCE")
+        self.distance = DistanceWidget("dist_traveled", "DISTANCE")
 
-        posLapDistLayout = QtWidgets.QHBoxLayout()
+        posLapDistLayout = QtWidgets.QVBoxLayout()
         posLapDistLayout.addWidget(self.position)
         posLapDistLayout.addWidget(self.lap)
         posLapDistLayout.addWidget(self.distance)
@@ -118,6 +118,16 @@ class DisplayWidget(QtWidgets.QFrame):
 
         # Set the layout for the display
         self.setLayout(mainLayout)
+    
+    
+    #@Slot()
+    #def updateWidgets(self, fdp: ForzaDataPacket, dashConfig: dict):
+    #    """
+    #    Collects everything needed to update the widgets, and sends the update signal
+    #    """
+    #    self.updateSignal.emit(fdp, dashConfig)
+        
+
 
 
 class Dashboard(QtWidgets.QMainWindow):
@@ -131,7 +141,7 @@ class Dashboard(QtWidgets.QMainWindow):
         SETTINGS = 1
         DISPLAY = 0
 
-    updateSignal = Signal(ForzaDataPacket)
+    updateSignal = Signal(ForzaDataPacket, dict)
 
     def __init__(self):
         super().__init__()
@@ -208,11 +218,11 @@ class Dashboard(QtWidgets.QMainWindow):
     def onCollected(self, data):
         """Called when a single UDP packet is collected. Receives the unprocessed
         packet data, transforms it into a Forza Data Packet and emits the update signal with
-        that forza data packet object"""
+        that forza data packet object, and the dashboard config dictionary"""
 
         logging.debug("onCollected: Received Data")
         fdp = ForzaDataPacket(data)
-        self.updateSignal.emit(fdp)
+        self.updateSignal.emit(fdp, self.dashConfig)
 
     def loop_finished(self):
         """Called after the port is closed and the dashboard stops listening to packets"""
@@ -228,7 +238,5 @@ class Dashboard(QtWidgets.QMainWindow):
     def updateConfig(self, dashConfig:dict = None, paramConfig:dict = None):
         """Updates the dashboard's configuration"""
         
-        # Dummy update config for now
-        newDashConfig = dict()
-        newDashConfig["port"] = 1337
-        self.dashConfig = newDashConfig
+        self.dashConfig = dashConfig
+        self.paramConfig = paramConfig

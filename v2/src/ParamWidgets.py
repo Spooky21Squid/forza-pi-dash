@@ -3,6 +3,7 @@ from PySide6.QtCore import Qt, Slot
 from fdp import ForzaDataPacket
 from enum import Enum
 
+
 class ParamWidget(QtWidgets.QFrame):
     """
     A compund widget that simply Displays the name of a parameter, and the value of
@@ -24,7 +25,7 @@ class ParamWidget(QtWidgets.QFrame):
         self.paramLabel = QtWidgets.QLabel(paramLabel)
         self.paramValue = QtWidgets.QLabel(paramValue)
 
-        #self.paramLabel.setAlignment(Qt.AlignCenter)
+        self.paramLabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         #self.paramValue.setAlignment(Qt.AlignCenter)
 
         layout = QtWidgets.QHBoxLayout()
@@ -33,14 +34,58 @@ class ParamWidget(QtWidgets.QFrame):
         self.setLayout(layout)
     
     @Slot()
-    def update(self, fdp: ForzaDataPacket):
+    def update(self, fdp: ForzaDataPacket, dashConfig: dict):
         """
-        Updates the displayed parameter's value with an updated value
-        from the forza data packet
+        Updates the widget's value with an updated value from the forza data packet, and
+        the widget's parameter label
+        """
+
+        newValue = getattr(fdp, self.paramName)
+        formattedValue = self.format(newValue, dashConfig)
+        self.paramValue.setText(formattedValue)
+    
+    def format(self, value, dashConfig: dict) -> str:
+        """
+        Converts a parameter from its forza data packet format to a
+        new format suitable for displaying on the dashboard. Eg. the
+        best_lap_time parameter is sent as a time in seconds, but will be converted
+        to a minutes : seconds . milliseconds format.
+
+        Parameters
+        ----------
+
+        - paramName: The name of the parameter in the forza data packet
+        - value: The value of the parameter to be formatted
+        - dashConfig: The config dict containing the dashboard settings
         """
         
-        newValue = getattr(fdp, self.paramName)
-        self.paramValue.setText(str(newValue))
+        paramName = self.paramName
+        result = None
+
+        match paramName:
+            case "race_pos":
+                result = str(int(value))
+            case "lap_no":
+                result = str(int(value))
+            case "dist_traveled":
+                units = dashConfig["distanceUnits"]
+                if units == "metric":
+                    result = value * 0.001  # metres to kilometres
+                else:
+                    result = value * 0.0006213712  # metres to miles
+                result = "{:.3f}".format(result)
+            case _:  # Couldn't find that parameter
+                result = str(value)
+        
+        return result
+
+
+class DistanceWidget(ParamWidget):
+    def __init__(self, paramName: str, paramLabel: str, paramValue = "0"):
+        super().__init__(paramName, paramLabel, paramValue)
+    
+    def mousePressEvent(self, event):
+        print("Clicked on Distance")
 
 
 class SingleTireWidget(QtWidgets.QFrame):
@@ -79,7 +124,7 @@ class SingleTireWidget(QtWidgets.QFrame):
         self.setLayout(layout)
     
     @Slot()
-    def update(self, fdp: ForzaDataPacket):
+    def update(self, fdp: ForzaDataPacket, dashConfig: dict):
         paramName = ""
         if self.corner is self.Corner.FL:
             paramName = "tire_wear_FL"
@@ -114,7 +159,7 @@ class TireSlipWidget(QtWidgets.QProgressBar):
 
     
     @Slot()
-    def update(self, fdp: ForzaDataPacket):
+    def update(self, fdp: ForzaDataPacket, dashConfig: dict):
         """Updates the tire slip widget with a new value"""
         value = getattr(fdp, self.tire, 0)
         self.setValue(int(value * 10))
