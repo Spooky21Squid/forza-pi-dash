@@ -1,7 +1,7 @@
 from PySide6 import QtWidgets
 from PySide6.QtCore import Slot, QThread, QObject, Signal
 
-from ParamWidgets import TireSlipWidget
+from ParamWidgets import TireSlipWidget, ParamWidget
 
 from fdp import ForzaDataPacket
 
@@ -92,9 +92,24 @@ class DisplayWidget(QtWidgets.QFrame):
         self.updateSignal.connect(self.slipRight.update)
         self.updateSignal.connect(self.slipLeft.update)
 
+        # Add the position, lap number and distance widgets
+        self.position = ParamWidget("race_pos", "POSITION")
+        self.lap = ParamWidget("lap_no", "LAP")
+        self.distance = ParamWidget("dist_traveled", "DISTANCE")
+
+        posLapDistLayout = QtWidgets.QHBoxLayout()
+        posLapDistLayout.addWidget(self.position)
+        posLapDistLayout.addWidget(self.lap)
+        posLapDistLayout.addWidget(self.distance)
+
+        self.updateSignal.connect(self.position.update)
+        self.updateSignal.connect(self.lap.update)
+        self.updateSignal.connect(self.distance.update)
+
         # Layout for the meat of the dashboard
         centreLayout = QtWidgets.QVBoxLayout()
         centreLayout.addLayout(buttonLayout)
+        centreLayout.addLayout(posLapDistLayout)
 
         mainLayout = QtWidgets.QHBoxLayout()
         mainLayout.addWidget(self.slipLeft)
@@ -103,8 +118,6 @@ class DisplayWidget(QtWidgets.QFrame):
 
         # Set the layout for the display
         self.setLayout(mainLayout)
-
-        
 
 
 class Dashboard(QtWidgets.QMainWindow):
