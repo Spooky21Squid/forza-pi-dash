@@ -3,6 +3,45 @@ from PySide6.QtCore import Qt, Slot
 from fdp import ForzaDataPacket
 from enum import Enum
 
+class ParamWidget(QtWidgets.QFrame):
+    """
+    A compund widget that simply Displays the name of a parameter, and the value of
+    that parameter next to it. Eg. tire_temp_FL displays the tempatarure
+    of the front left tire.
+
+    Attributes
+    ----------
+
+    - paramName: The name of the parameter in the forza data packet
+    - paramLabel: The user-friendly label for the widget to display
+    - paramValue: The value of the parameter
+    """
+
+    def __init__(self, paramName: str, paramLabel: str, paramValue = "0"):
+        super().__init__()
+
+        self.paramName = paramName
+        self.paramLabel = QtWidgets.QLabel(paramLabel)
+        self.paramValue = QtWidgets.QLabel(paramValue)
+
+        #self.paramLabel.setAlignment(Qt.AlignCenter)
+        #self.paramValue.setAlignment(Qt.AlignCenter)
+
+        layout = QtWidgets.QHBoxLayout()
+        layout.addWidget(self.paramLabel)
+        layout.addWidget(self.paramValue)
+        self.setLayout(layout)
+    
+    @Slot()
+    def update(self, fdp: ForzaDataPacket):
+        """
+        Updates the displayed parameter's value with an updated value
+        from the forza data packet
+        """
+        
+        newValue = getattr(fdp, self.paramName)
+        self.paramValue.setText(str(newValue))
+
 
 class SingleTireWidget(QtWidgets.QFrame):
     """Represents a single tire temp/wear combo inside the large tire widget"""
