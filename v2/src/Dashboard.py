@@ -1,7 +1,7 @@
 from PySide6 import QtWidgets
 from PySide6.QtCore import Slot, QThread, QObject, Signal
 
-from ParamWidgets import TireSlipWidget, ParamWidget, CompoundTireWidget
+from ParamWidgets import TireSlipWidget, ParamWidget, CompoundTireWidget, GearWidget
 
 from fdp import ForzaDataPacket
 
@@ -105,6 +105,8 @@ class DisplayWidget(QtWidgets.QFrame):
         # Tire wear and temp compound widget
         self.tires = CompoundTireWidget()
         
+        # Gear indicator
+        self.gear = GearWidget()
 
         # Connect all the widgets --------------------------
 
@@ -117,7 +119,11 @@ class DisplayWidget(QtWidgets.QFrame):
 
         self.updateSignal.connect(self.tires.update)
 
+        self.updateSignal.connect(self.gear.update)
+
         # Add everything to the layouts ---------------------------
+
+        centreLayout.addWidget(self.gear)
 
         posLapDistLayout.addWidget(self.position)
         posLapDistLayout.addWidget(self.lap)

@@ -206,3 +206,38 @@ class TireSlipWidget(QtWidgets.QProgressBar):
         """Updates the tire slip widget with a new value"""
         value = getattr(fdp, self.tire, 0)
         self.setValue(int(value * 10))
+
+
+class GearWidget(QtWidgets.QLabel):
+    """
+    The central colour changing gear indicator
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.setText("0")
+    
+    @Slot()
+    def update(self, fdp: ForzaDataPacket, dashConfig: dict):
+        """
+        Updates the number and colour of the gear indicator using the
+        rpm % limits set in the config settings
+        """
+
+        rpm = fdp.current_engine_rpm
+        maxrpm = fdp.engine_max_rpm
+
+        if rpm == 0 or maxrpm == 0:
+            return
+
+        ratio = rpm / maxrpm
+        
+        redlinePercent = dashConfig.get("redlinePercent", 85) * 0.01
+        readyPercent = dashConfig.get("readyPercent", 75) * 0.01
+
+        if ratio >= redlinePercent:
+            self.setStyleSheet("color: red")
+        elif ratio >= readyPercent and ratio < redlinePercent:
+            self.setStyleSheet("color: yellow")
+        else:
+            self.setStyleSheet("color: black")
