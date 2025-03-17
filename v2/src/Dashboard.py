@@ -1,6 +1,10 @@
 from PySide6 import QtWidgets
 from PySide6.QtCore import Slot, QThread, QObject, Signal
 
+from ParamWidgets import TireSlipWidget
+
+from fdp import ForzaDataPacket
+
 import logging
 import select
 import socket
@@ -64,9 +68,12 @@ class SettingsWidget(QtWidgets.QFrame):
 class DisplayWidget(QtWidgets.QFrame):
     """Displays the main dashboard"""
 
+    updateSignal = Signal(ForzaDataPacket)
+
     def __init__(self):
         super().__init__()
 
+        # Add the top row of buttons --------------
         self.listenButton = QtWidgets.QPushButton("START")
         self.listenButton.setCheckable(True)  # Make toggleable
         #self.listenButton.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
@@ -78,7 +85,26 @@ class DisplayWidget(QtWidgets.QFrame):
         buttonLayout.addWidget(self.listenButton)
         buttonLayout.addWidget(self.settingsButton)
         buttonLayout.addWidget(self.resetButton)
-        self.setLayout(buttonLayout)
+
+        # Add the tire slip bars
+        self.slipRight = TireSlipWidget("tire_combined_slip_RR")
+        self.slipLeft = TireSlipWidget("tire_combined_slip_RL")
+        self.updateSignal.connect(self.slipRight.update)
+        self.updateSignal.connect(self.slipLeft.update)
+
+        # Layout for the meat of the dashboard
+        centreLayout = QtWidgets.QVBoxLayout()
+        centreLayout.addLayout(buttonLayout)
+
+        mainLayout = QtWidgets.QHBoxLayout()
+        mainLayout.addWidget(self.slipLeft)
+        mainLayout.addLayout(centreLayout)
+        mainLayout.addWidget(self.slipRight)
+
+        # Set the layout for the display
+        self.setLayout(mainLayout)
+
+        
 
 
 class Dashboard(QtWidgets.QMainWindow):
@@ -92,6 +118,7 @@ class Dashboard(QtWidgets.QMainWindow):
         SETTINGS = 1
         DISPLAY = 0
 
+    updateSignal = Signal(ForzaDataPacket)
 
     def __init__(self):
         super().__init__()
@@ -119,6 +146,9 @@ class Dashboard(QtWidgets.QMainWindow):
 
         # So the listen button triggers the thread
         self.display.listenButton.clicked.connect(self.toggle_loop)
+
+        # Chain the update signal to the display widget's update signal
+        self.updateSignal.connect(self.display.updateSignal)
 
     @Slot()
     def changeToSettingsTab(self):
@@ -163,8 +193,13 @@ class Dashboard(QtWidgets.QMainWindow):
             self.thread.start()
 
     def onCollected(self, data):
-        """Called when a single UDP packet is collected"""
+        """Called when a single UDP packet is collected. Receives the unprocessed
+        packet data, transforms it into a Forza Data Packet and emits the update signal with
+        that forza data packet object"""
+
         logging.debug("onCollected: Received Data")
+        fdp = ForzaDataPacket(data)
+        self.updateSignal.emit(fdp)
 
     def loop_finished(self):
         """Called after the port is closed and the dashboard stops listening to packets"""
