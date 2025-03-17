@@ -96,7 +96,7 @@ class SingleTireWidget(QtWidgets.QFrame):
         
         # Shows the temperature by changing the border colour of the box
         self.tireIcon = QtWidgets.QFrame(frameShape=QtWidgets.QFrame.Box)
-        self.tireIcon.setObjectName("tire")
+        #self.tireIcon.setObjectName("tire")
 
         # Shows tire wear as a percentage
         self.wear = QtWidgets.QLabel("0%")
@@ -116,18 +116,70 @@ class SingleTireWidget(QtWidgets.QFrame):
     
     @Slot()
     def update(self, fdp: ForzaDataPacket, dashConfig: dict):
-        paramName = ""
+        tireWearParam = ""
+        tireTempParam = ""
+
         if self.corner is self.Corner.FL:
-            paramName = "tire_wear_FL"
+            tireWearParam = "tire_wear_FL"
+            tireTempParam = "tire_temp_FL"
         elif self.corner is self.Corner.FR:
-            paramName = "tire_wear_FR"
+            tireWearParam = "tire_wear_FR"
+            tireTempParam = "tire_temp_FR"
         elif self.corner is self.Corner.RL:
-            paramName = "tire_wear_RL"
+            tireWearParam = "tire_wear_RL"
+            tireTempParam = "tire_temp_RL"
         else:
-            paramName = "tire_wear_RR"
+            tireWearParam = "tire_wear_RR"
+            tireTempParam = "tire_temp_RR"
+        
+        tireWear = getattr(fdp, tireWearParam)
+        tireTemp = getattr(fdp, tireTempParam)
         
         # Update the tire wear and temperature with values from
         # the fdp, and using temp values from dashConfig
+
+        self.wear.setText("{}%".format(int(tireWear * 100)))
+
+        blueTemp = dashConfig["tireTempBlue"]
+        yellowTemp = dashConfig["tireTempYellow"]
+        redTemp = dashConfig["tireTempRed"]
+
+        if tireTemp <= blueTemp:
+            self.tireIcon.setStyleSheet("border: 3px solid blue;")
+        elif tireTemp >= redTemp:
+            self.tireIcon.setStyleSheet("border: 3px solid red;")
+        elif tireTemp >= yellowTemp:
+            self.tireIcon.setStyleSheet("border: 3px solid yellow;")
+        else:
+            self.tireIcon.setStyleSheet("border: 3px solid green;")
+
+
+class CompoundTireWidget(QtWidgets.QFrame):
+    """The widget holding all the individual tire widgets"""
+
+    def __init__(self):
+        super().__init__()
+        layout = QtWidgets.QGridLayout()
+
+        self.fl = SingleTireWidget(SingleTireWidget.Corner.FL)
+        self.fr = SingleTireWidget(SingleTireWidget.Corner.FR)
+        self.rl = SingleTireWidget(SingleTireWidget.Corner.RL)
+        self.rr = SingleTireWidget(SingleTireWidget.Corner.RR)
+
+        layout.addWidget(self.fl, 0, 0)
+        layout.addWidget(self.fr, 0, 1)
+        layout.addWidget(self.rl, 1, 0)
+        layout.addWidget(self.rr, 1, 1)
+
+        self.setLayout(layout)
+    
+    @Slot()
+    def update(self, fdp: ForzaDataPacket, dashConfig: dict):
+        """Updates each single tire widget with their tire wear and temps"""
+        self.fl.update(fdp, dashConfig)
+        self.fr.update(fdp, dashConfig)
+        self.rl.update(fdp, dashConfig)
+        self.rr.update(fdp, dashConfig)
 
 
 class TireSlipWidget(QtWidgets.QProgressBar):

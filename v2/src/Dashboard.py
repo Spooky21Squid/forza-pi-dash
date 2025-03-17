@@ -1,7 +1,7 @@
 from PySide6 import QtWidgets
 from PySide6.QtCore import Slot, QThread, QObject, Signal
 
-from ParamWidgets import TireSlipWidget, ParamWidget
+from ParamWidgets import TireSlipWidget, ParamWidget, CompoundTireWidget
 
 from fdp import ForzaDataPacket
 
@@ -106,10 +106,15 @@ class DisplayWidget(QtWidgets.QFrame):
         self.updateSignal.connect(self.lap.update)
         self.updateSignal.connect(self.distance.update)
 
+        # Add the tire wear and temp widget
+        self.tires = CompoundTireWidget()
+        self.updateSignal.connect(self.tires.update)
+
         # Layout for the meat of the dashboard
         centreLayout = QtWidgets.QVBoxLayout()
         centreLayout.addLayout(buttonLayout)
         centreLayout.addLayout(posLapDistLayout)
+        centreLayout.addWidget(self.tires)
 
         mainLayout = QtWidgets.QHBoxLayout()
         mainLayout.addWidget(self.slipLeft)
