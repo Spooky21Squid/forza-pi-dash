@@ -73,55 +73,75 @@ class DisplayWidget(QtWidgets.QFrame):
     def __init__(self):
         super().__init__()
 
-        # Add the top row of buttons --------------
+        # Define the layouts ----------------------
+
+        mainLayout = QtWidgets.QHBoxLayout()  # For the left tire slip, rest of dash, and right tire slip
+        dashLayout = QtWidgets.QVBoxLayout()  # Sits in the middle of the tire slip bars
+        buttonLayout = QtWidgets.QHBoxLayout()  # Horizontal bar of buttons at the top
+        middleLayout = QtWidgets.QHBoxLayout()  # Contains the left, centre and right layouts
+        posLapDistLayout = QtWidgets.QVBoxLayout()  # Vertical group of pos lap and dist widgets
+        leftLayout = QtWidgets.QVBoxLayout()  # Left column, grouping poslapdist and tire widgets
+        centreLayout = QtWidgets.QVBoxLayout()  # Centre column, grouping gear, speed and delta
+        rightLayout = QtWidgets.QVBoxLayout()  # Right column, grouping time and fuel
+
+        # Define the widgets ---------------------------
+
+        # Top row of buttons
         self.listenButton = QtWidgets.QPushButton("START")
         self.listenButton.setCheckable(True)  # Make toggleable
         #self.listenButton.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
-
         self.settingsButton = QtWidgets.QPushButton("SETTINGS")
         self.resetButton = QtWidgets.QPushButton("RESET")
 
-        buttonLayout = QtWidgets.QHBoxLayout()
-        buttonLayout.addWidget(self.listenButton)
-        buttonLayout.addWidget(self.settingsButton)
-        buttonLayout.addWidget(self.resetButton)
-
-        # Add the tire slip bars
+        # Tire slip bars
         self.slipRight = TireSlipWidget("tire_combined_slip_RR")
         self.slipLeft = TireSlipWidget("tire_combined_slip_RL")
-        self.updateSignal.connect(self.slipRight.update)
-        self.updateSignal.connect(self.slipLeft.update)
 
-        # Add the position, lap number and distance widgets
+        # Position, lap number and distance widgets
         self.position = ParamWidget("race_pos", "POSITION")
         self.lap = ParamWidget("lap_no", "LAP")
         self.distance = ParamWidget("dist_traveled", "DISTANCE")
 
-        posLapDistLayout = QtWidgets.QVBoxLayout()
-        posLapDistLayout.addWidget(self.position)
-        posLapDistLayout.addWidget(self.lap)
-        posLapDistLayout.addWidget(self.distance)
+        # Tire wear and temp compound widget
+        self.tires = CompoundTireWidget()
+        
+
+        # Connect all the widgets --------------------------
+
+        self.updateSignal.connect(self.slipRight.update)
+        self.updateSignal.connect(self.slipLeft.update)
 
         self.updateSignal.connect(self.position.update)
         self.updateSignal.connect(self.lap.update)
         self.updateSignal.connect(self.distance.update)
 
-        # Add the tire wear and temp widget
-        self.tires = CompoundTireWidget()
         self.updateSignal.connect(self.tires.update)
 
-        # Layout for the meat of the dashboard
-        centreLayout = QtWidgets.QVBoxLayout()
-        centreLayout.addLayout(buttonLayout)
-        centreLayout.addLayout(posLapDistLayout)
-        centreLayout.addWidget(self.tires)
+        # Add everything to the layouts ---------------------------
 
-        mainLayout = QtWidgets.QHBoxLayout()
+        posLapDistLayout.addWidget(self.position)
+        posLapDistLayout.addWidget(self.lap)
+        posLapDistLayout.addWidget(self.distance)
+
+        leftLayout.addLayout(posLapDistLayout)
+        leftLayout.addWidget(self.tires)
+
+        middleLayout.addLayout(leftLayout)
+        middleLayout.addLayout(centreLayout)
+        middleLayout.addLayout(rightLayout)
+
+        buttonLayout.addWidget(self.listenButton)
+        buttonLayout.addWidget(self.settingsButton)
+        buttonLayout.addWidget(self.resetButton)
+
+        dashLayout.addLayout(buttonLayout)
+        dashLayout.addLayout(middleLayout)
+
         mainLayout.addWidget(self.slipLeft)
-        mainLayout.addLayout(centreLayout)
+        mainLayout.addLayout(dashLayout)
         mainLayout.addWidget(self.slipRight)
 
-        # Set the layout for the display
+        # Finally set the main layout for the display
         self.setLayout(mainLayout)
     
     
