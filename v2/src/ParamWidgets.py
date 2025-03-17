@@ -437,3 +437,34 @@ class IntervalWidget(QtWidgets.QFrame):
                 self.updateInterval()
             else:  # Keep ignoring the lap times until the player reaches a new lap
                 self.syncLap = playerLap + 1
+
+
+class AlertWidget(QtWidgets.QLabel):
+    """
+    A widget for an alert on the dashboard, either pit now or
+    not racing alert
+    """
+
+    def __init__(self, text: str):
+        super().__init__(text)
+        sp = QtWidgets.QSizePolicy()
+        sp.setRetainSizeWhenHidden(True)
+        self.setSizePolicy(sp)
+    
+    @Slot()
+    def showHide(self, hide: bool):
+        """
+        Shows or hides the alert
+
+        Parameters
+        ----------
+
+        - hide: True to hide the alert, False to show the alert
+        """
+        
+        if hide:
+            self.hide()
+        else:
+            self.show()
+
+

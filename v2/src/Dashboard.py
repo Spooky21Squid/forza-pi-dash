@@ -1,7 +1,7 @@
 from PySide6 import QtWidgets
 from PySide6.QtCore import Slot, QThread, QObject, Signal
 
-from ParamWidgets import TireSlipWidget, ParamWidget, CompoundTireWidget, GearWidget, SpeedWidget, IntervalWidget
+from ParamWidgets import TireSlipWidget, ParamWidget, CompoundTireWidget, GearWidget, SpeedWidget, IntervalWidget, AlertWidget
 
 from fdp import ForzaDataPacket
 
@@ -110,6 +110,9 @@ class DisplayWidget(QtWidgets.QFrame):
         self.speed = SpeedWidget()
         self.interval = IntervalWidget()
 
+        # Not racing indicator
+        self.notRacing = AlertWidget("NOT RACING")
+
         # Connect all the widgets --------------------------
 
         self.updateSignal.connect(self.slipRight.update)
@@ -130,6 +133,7 @@ class DisplayWidget(QtWidgets.QFrame):
         centreLayout.addWidget(self.gear)
         centreLayout.addWidget(self.speed)
         centreLayout.addWidget(self.interval)
+        centreLayout.addWidget(self.notRacing)
 
         posLapDistLayout.addWidget(self.position)
         posLapDistLayout.addWidget(self.lap)
@@ -169,6 +173,7 @@ class Dashboard(QtWidgets.QMainWindow):
         DISPLAY = 0
 
     updateSignal = Signal(ForzaDataPacket, dict)
+    isRacing = Signal(bool)
 
     def __init__(self):
         super().__init__()
@@ -199,6 +204,9 @@ class Dashboard(QtWidgets.QMainWindow):
 
         # Chain the update signal to the display widget's update signal
         self.updateSignal.connect(self.display.updateSignal)
+
+        # Show or hide the 'NOT RACING' alert based on fdp.is_race_on
+        self.isRacing.connect(self.display.notRacing.showHide)
 
     @Slot()
     def changeToSettingsTab(self):
@@ -250,6 +258,10 @@ class Dashboard(QtWidgets.QMainWindow):
 
         logging.debug("onCollected: Received Data")
         fdp = ForzaDataPacket(data)
+
+        isRacing = bool(fdp.is_race_on)
+        self.isRacing.emit(isRacing)
+
         if not fdp.is_race_on:
             return
         self.updateSignal.emit(fdp, self.dashConfig)
@@ -260,6 +272,7 @@ class Dashboard(QtWidgets.QMainWindow):
         self.display.listenButton.setEnabled(True)
         self.display.settingsButton.setEnabled(True)
         self.display.resetButton.setEnabled(True)
+        self.isRacing.emit(False)
 
     def updatePort(newPort:int):
         """Updates the port that listens for forza UDP packets"""
