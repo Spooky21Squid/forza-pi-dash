@@ -1,7 +1,7 @@
 from PySide6 import QtWidgets
 from PySide6.QtCore import Slot, QThread, QObject, Signal
 
-from ParamWidgets import TireSlipWidget, ParamWidget, CompoundTireWidget, GearWidget, SpeedWidget
+from ParamWidgets import TireSlipWidget, ParamWidget, CompoundTireWidget, GearWidget, SpeedWidget, IntervalWidget
 
 from fdp import ForzaDataPacket
 
@@ -108,6 +108,7 @@ class DisplayWidget(QtWidgets.QFrame):
         # Gear indicator, speed and interval
         self.gear = GearWidget()
         self.speed = SpeedWidget()
+        self.interval = IntervalWidget()
 
         # Connect all the widgets --------------------------
 
@@ -122,11 +123,13 @@ class DisplayWidget(QtWidgets.QFrame):
 
         self.updateSignal.connect(self.gear.update)
         self.updateSignal.connect(self.speed.update)
+        self.updateSignal.connect(self.interval.update)
 
         # Add everything to the layouts ---------------------------
 
         centreLayout.addWidget(self.gear)
         centreLayout.addWidget(self.speed)
+        centreLayout.addWidget(self.interval)
 
         posLapDistLayout.addWidget(self.position)
         posLapDistLayout.addWidget(self.lap)
@@ -242,10 +245,13 @@ class Dashboard(QtWidgets.QMainWindow):
     def onCollected(self, data):
         """Called when a single UDP packet is collected. Receives the unprocessed
         packet data, transforms it into a Forza Data Packet and emits the update signal with
-        that forza data packet object, and the dashboard config dictionary"""
+        that forza data packet object, and the dashboard config dictionary. If the race
+        is not on, it does not emit the signal"""
 
         logging.debug("onCollected: Received Data")
         fdp = ForzaDataPacket(data)
+        if not fdp.is_race_on:
+            return
         self.updateSignal.emit(fdp, self.dashConfig)
 
     def loop_finished(self):

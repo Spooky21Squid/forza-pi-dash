@@ -2,6 +2,8 @@ from PySide6 import QtWidgets
 from PySide6.QtCore import Qt, Slot
 from fdp import ForzaDataPacket
 from enum import Enum
+from math import floor
+import logging
 
 
 class ParamWidget(QtWidgets.QFrame):
@@ -281,3 +283,157 @@ class GearWidget(QtWidgets.QLabel):
             self.setStyleSheet("color: yellow")
         else:
             self.setStyleSheet("color: black")
+
+
+class IntervalWidget(QtWidgets.QFrame):
+    """Maintains all the data related to the interval"""
+
+    def __init__(self):
+        super().__init__()
+        self.interval = QtWidgets.QLabel("0.000")
+        self.label = QtWidgets.QLabel("delta")
+
+        self.interval.setAlignment(Qt.AlignCenter)
+        self.label.setAlignment(Qt.AlignCenter)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.interval)
+        layout.addWidget(self.label)
+        self.setLayout(layout)
+
+        self.bestLap = None  # The best lap as recorded by this object, not by Forza
+        self.currentLap = -2
+        self.syncLap = -1  # The lap the player needs to reach to begin recording intervals
+        self.currentPoint = None
+        self.distanceFactor = 0  # The distance to take away to get current lap distance
+        
+        # Stores a list of (lapDistance:float, lapTime:float) points, where lapDistance
+        # is the distance traveled during that lap in metres, and lapTime is the current
+        # lap time recorded at that distance in seconds
+        self.bestLapPoints = list()
+        self.currentLapPoints = list()
+
+
+    def insertPoint(self):
+        """
+        Inserts the current point into the currentLapPoints list. If the distance
+        recorded is less or equal than the previous packet, it is ignored. If it is
+        negative (hasn't crossed the line after starting the race), it is ignored.
+        """
+        if len(self.currentLapPoints) == 0 or self.currentPoint[0] > self.currentLapPoints[-1][0] or self.currentPoint[0] < 0:
+            self.currentLapPoints.append(self.currentPoint)
+    
+    def updateInterval(self):
+        """
+        Updates the current interval by comparing the current point's lap time to
+        the closest point's lap time in the bestLapTime list
+        """
+
+        if len(self.bestLapPoints) == 0:
+            return
+
+        currentTime = self.currentPoint[1]
+        currentDistance = self.currentPoint[0]
+
+        # Search for the closest best lap point
+        # Could use binary search but for now just use linear
+
+        bestDifference = 9999999999999
+        bestPointIndex = 0
+
+        currentIndex = 0
+        while currentIndex < len(self.bestLapPoints):
+            bestLapDist, bestLapTime = self.bestLapPoints[currentIndex]
+            currentDifference = abs(bestLapDist - currentDistance)
+            if currentDifference <= bestDifference:
+                bestDifference = currentDifference
+                bestPointIndex = currentIndex
+                currentIndex += 1
+            else:
+                break
+        
+        bestPoint = self.bestLapPoints[bestPointIndex]
+        interval = currentTime - bestPoint[1] # negative is faster
+
+        minutes, seconds = divmod(abs(interval), 60)
+        mseconds = str(seconds - floor(seconds))  # gets us the decimal part
+        mseconds = mseconds[2:5]
+        sign = "+"
+        if interval < 0:
+            sign = "-"
+        self.interval.setText("{}{}.{}".format(sign, int(seconds), mseconds))
+    
+    @Slot()
+    def update(self, fdp: ForzaDataPacket, dashConfig: dict):
+        """
+        Updates the Interval object with the latest packet
+        
+        To display an accurate interval, an entire uninterrupted lap needs to be
+        recorded as a baseline. So if a player starts the dashboard in the middle of
+        a lap, that lap is ignored, and the next lap is used as a baseline. This means
+        the interval will appear on the 2nd lap.
+        """
+        
+        playerLap = int(fdp.lap_no)
+        currentLapTime = fdp.cur_lap_time
+        currentDistance = fdp.dist_traveled
+        lapDistance = currentDistance - self.distanceFactor
+        self.currentPoint = (lapDistance, currentLapTime)
+
+        if playerLap == self.currentLap:
+            # Log the current point
+
+            self.insertPoint()
+            self.updateInterval()
+
+        elif playerLap == self.currentLap + 1:
+            
+            # If the player stopped listening on the prev lap and started again on the next lap,
+            # making the time logs inconsistent with the game
+            if currentLapTime > 1:
+                self.currentLap = -1
+                self.currentLapPoints = []
+                self.syncLap = playerLap + 1
+                return
+
+            # just began a new lap, update the lap counter and compare it to best lap
+            # Doesn't use the game's best lap - uses an internally tracked best lap which
+            # can be a dirty lap. This is to allow the dashboard to be started mid race
+            # and still display an interval, and also to allow a useful interval to be
+            # displayed when using non-forza-clean limits (eg. some Tora races), but this
+            # can be changed
+
+            # If player just set a new best lap
+            if self.bestLap is None or self.bestLap <= 0 or fdp.last_lap_time < self.bestLap:
+                logging.debug("Interval: Best Lap! {}".format(fdp.last_lap_time))
+                self.bestLapPoints = self.currentLapPoints.copy()
+                self.bestLap = fdp.last_lap_time
+            else: # If player didn't set a best lap
+                logging.debug("Interval: New Lap. {}".format(fdp.last_lap_time))
+            self.currentLapPoints.clear()
+
+            # update the distance factor and thus the current point's distance
+            self.distanceFactor = fdp.dist_traveled
+            lapDistance = currentDistance - self.distanceFactor
+            self.currentPoint = (lapDistance, currentLapTime)
+
+            self.insertPoint()
+            self.currentLap += 1
+            self.updateInterval()
+
+        else:  # player lap is not consistent with self.currentLap (eg. started recording in the middle of a session)
+            if playerLap == self.syncLap:
+                logging.debug("Interval: Synced Laps")
+                # player has reached new sync lap, update object and start recording
+                self.currentLapPoints.clear()
+
+                # update the distance factor and thus the current point's distance
+                self.distanceFactor = fdp.dist_traveled
+                lapDistance = currentDistance - self.distanceFactor
+                self.currentPoint = (lapDistance, currentLapTime)
+
+                self.insertPoint()
+                self.currentLap = self.syncLap
+                self.updateInterval()
+            else:  # Keep ignoring the lap times until the player reaches a new lap
+                self.syncLap = playerLap + 1
