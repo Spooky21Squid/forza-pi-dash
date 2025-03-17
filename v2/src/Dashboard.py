@@ -1,7 +1,7 @@
 from PySide6 import QtWidgets
 from PySide6.QtCore import Slot, QThread, QObject, Signal
 
-from ParamWidgets import TireSlipWidget, ParamWidget, CompoundTireWidget, GearWidget
+from ParamWidgets import TireSlipWidget, ParamWidget, CompoundTireWidget, GearWidget, SpeedWidget
 
 from fdp import ForzaDataPacket
 
@@ -105,8 +105,9 @@ class DisplayWidget(QtWidgets.QFrame):
         # Tire wear and temp compound widget
         self.tires = CompoundTireWidget()
         
-        # Gear indicator
+        # Gear indicator, speed and interval
         self.gear = GearWidget()
+        self.speed = SpeedWidget()
 
         # Connect all the widgets --------------------------
 
@@ -120,10 +121,12 @@ class DisplayWidget(QtWidgets.QFrame):
         self.updateSignal.connect(self.tires.update)
 
         self.updateSignal.connect(self.gear.update)
+        self.updateSignal.connect(self.speed.update)
 
         # Add everything to the layouts ---------------------------
 
         centreLayout.addWidget(self.gear)
+        centreLayout.addWidget(self.speed)
 
         posLapDistLayout.addWidget(self.position)
         posLapDistLayout.addWidget(self.lap)
@@ -149,16 +152,6 @@ class DisplayWidget(QtWidgets.QFrame):
 
         # Finally set the main layout for the display
         self.setLayout(mainLayout)
-    
-    
-    #@Slot()
-    #def updateWidgets(self, fdp: ForzaDataPacket, dashConfig: dict):
-    #    """
-    #    Collects everything needed to update the widgets, and sends the update signal
-    #    """
-    #    self.updateSignal.emit(fdp, dashConfig)
-        
-
 
 
 class Dashboard(QtWidgets.QMainWindow):

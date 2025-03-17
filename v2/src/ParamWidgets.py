@@ -79,6 +79,43 @@ class ParamWidget(QtWidgets.QFrame):
         return result
 
 
+class SpeedWidget(QtWidgets.QFrame):
+    """
+    A widget that displays the speed of the player as their chosen units
+    """
+
+    def __init__(self):
+        super().__init__()
+
+        self.value = QtWidgets.QLabel("0")
+        self.units = QtWidgets.QLabel("mph")
+
+        self.units.setAlignment(Qt.AlignCenter)
+        self.value.setAlignment(Qt.AlignCenter)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.value)
+        layout.addWidget(self.units)
+        self.setLayout(layout)
+    
+    @Slot()
+    def update(self, fdp: ForzaDataPacket, dashConfig: dict):
+        """
+        Updates the speed and units with an updated value from the forza data packet
+        and the chosen units from dashConfig
+        """
+
+        newValue = fdp.speed
+        units = dashConfig["speedUnits"]
+
+        if units == "imperial":
+            self.units.setText("mph")
+            self.value.setText(str(int(newValue * 2.24)))
+        else:
+            self.units.setText("kmh")
+            self.value.setText(str(int(newValue * 3.6)))
+
+
 class SingleTireWidget(QtWidgets.QFrame):
     """Represents a single tire temp/wear combo inside the large tire widget"""
 
@@ -216,6 +253,7 @@ class GearWidget(QtWidgets.QLabel):
     def __init__(self):
         super().__init__()
         self.setText("0")
+        self.setAlignment(Qt.AlignCenter)
     
     @Slot()
     def update(self, fdp: ForzaDataPacket, dashConfig: dict):
@@ -223,6 +261,8 @@ class GearWidget(QtWidgets.QLabel):
         Updates the number and colour of the gear indicator using the
         rpm % limits set in the config settings
         """
+
+        self.setText(str(int(fdp.gear)))
 
         rpm = fdp.current_engine_rpm
         maxrpm = fdp.engine_max_rpm
