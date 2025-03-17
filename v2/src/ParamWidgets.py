@@ -75,6 +75,11 @@ class ParamWidget(QtWidgets.QFrame):
                 else:
                     result = value * 0.0006213712  # metres to miles
                 result = "{:.3f}".format(result)
+            case "last_lap_time" | "best_lap_time" | "cur_lap_time":
+                minutes, seconds = divmod(value, 60)
+                mseconds = str(seconds - floor(seconds))  # gets us the decimal part
+                mseconds = mseconds[2:5]
+                result = "{}:{}.{}".format(int(minutes), int(seconds), mseconds)
             case _:  # Couldn't find that parameter
                 result = str(value)
         

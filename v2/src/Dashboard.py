@@ -80,6 +80,7 @@ class DisplayWidget(QtWidgets.QFrame):
         buttonLayout = QtWidgets.QHBoxLayout()  # Horizontal bar of buttons at the top
         middleLayout = QtWidgets.QHBoxLayout()  # Contains the left, centre and right layouts
         posLapDistLayout = QtWidgets.QVBoxLayout()  # Vertical group of pos lap and dist widgets
+        lapTimesLayout = QtWidgets.QVBoxLayout()  # Vertical group of lap time widgets
         leftLayout = QtWidgets.QVBoxLayout()  # Left column, grouping poslapdist and tire widgets
         centreLayout = QtWidgets.QVBoxLayout()  # Centre column, grouping gear, speed and delta
         rightLayout = QtWidgets.QVBoxLayout()  # Right column, grouping time and fuel
@@ -113,6 +114,11 @@ class DisplayWidget(QtWidgets.QFrame):
         # Not racing indicator
         self.notRacing = AlertWidget("NOT RACING")
 
+        # Lap time widgets
+        self.bestLapTime = ParamWidget("best_lap_time", "BEST")
+        self.lastLapTime = ParamWidget("last_lap_time", "LAST")
+        self.currentLapTime = ParamWidget("cur_lap_time", "CURRENT")
+
         # Connect all the widgets --------------------------
 
         self.updateSignal.connect(self.slipRight.update)
@@ -128,7 +134,16 @@ class DisplayWidget(QtWidgets.QFrame):
         self.updateSignal.connect(self.speed.update)
         self.updateSignal.connect(self.interval.update)
 
+        self.updateSignal.connect(self.bestLapTime.update)
+        self.updateSignal.connect(self.lastLapTime.update)
+        self.updateSignal.connect(self.currentLapTime.update)
+
         # Add everything to the layouts ---------------------------
+        rightLayout.addLayout(lapTimesLayout)
+        
+        lapTimesLayout.addWidget(self.bestLapTime)
+        lapTimesLayout.addWidget(self.lastLapTime)
+        lapTimesLayout.addWidget(self.currentLapTime)
 
         centreLayout.addWidget(self.gear)
         centreLayout.addWidget(self.speed)
