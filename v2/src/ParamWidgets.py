@@ -80,6 +80,10 @@ class ParamWidget(QtWidgets.QFrame):
                 mseconds = str(seconds - floor(seconds))  # gets us the decimal part
                 mseconds = mseconds[2:5]
                 result = "{}:{}.{}".format(int(minutes), int(seconds), mseconds)
+            case "fuel":
+                result = "{:.2f}".format(value * 100)
+            case "laps_left" | "fuel_per_lap":
+                result = "{:.2f}".format(value)
             case _:  # Couldn't find that parameter
                 result = str(value)
         
@@ -473,3 +477,71 @@ class AlertWidget(QtWidgets.QLabel):
             self.show()
 
 
+class FuelWidget(QtWidgets.QFrame):
+    """Contains all the fuel information widgets"""
+
+    def __init__(self):
+        super().__init__()
+
+        self.fuelLevelHistory = None
+        self.lastLap = -3
+
+        layout = QtWidgets.QVBoxLayout()
+
+        self.fuelLevel = ParamWidget("fuel", "fUEL LEVEL")
+        self.fuelPerLap = ParamWidget("fuel_per_lap", "FUEL PER LAP")
+        self.lapsLeft = ParamWidget("laps_left", "LAPS LEFT")
+
+        layout.addWidget(self.fuelLevel)
+        layout.addWidget(self.fuelPerLap)
+        layout.addWidget(self.lapsLeft)
+
+        self.setLayout(layout)
+    
+    def getAverageFuelUsage(self):
+        """Gets the average fuel usage over the last 3 laps using the fuelLevelHistory list"""
+
+        totalUsed = 0
+        lapCount = 0
+
+        for i in range(1, 4):
+            used = self.fuelLevelHistory[i - 1] - self.fuelLevelHistory[i]
+            if used > 0:
+                lapCount += 1
+                totalUsed += used
+
+        if totalUsed == 0:
+            return 0
+        
+        return totalUsed / lapCount
+
+    @Slot()
+    def update(self, fdp: ForzaDataPacket, dashConfig: dict):
+        """Updates all the fuel widgets"""
+
+        self.fuelLevel.update(fdp, dashConfig)
+
+        fuel = fdp.fuel
+        lapsLeft = 0
+
+        # If on a new lap, update the fuel values
+        if fdp.lap_no != self.lastLap:
+            self.lastLap = fdp.lap_no
+            if self.fuelLevelHistory is None:
+                self.fuelLevelHistory = [fuel for i in range(4)]
+            else:
+                self.fuelLevelHistory.pop(0)
+                self.fuelLevelHistory.append(int(fuel * 10000) / 100)
+            usage = self.getAverageFuelUsage()
+
+            # update estimated fuel used per lap
+            fdp.fuel_per_lap = usage
+            self.fuelPerLap.update(fdp, dashConfig)
+        else:
+            usage = self.getAverageFuelUsage()
+
+        # update estimated laps left
+        if usage:
+            lapsLeft =  (fuel / usage) * 100
+            fdp.laps_left = lapsLeft
+            self.lapsLeft.update(fdp, dashConfig)

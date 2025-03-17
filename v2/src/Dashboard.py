@@ -1,7 +1,7 @@
 from PySide6 import QtWidgets
 from PySide6.QtCore import Slot, QThread, QObject, Signal
 
-from ParamWidgets import TireSlipWidget, ParamWidget, CompoundTireWidget, GearWidget, SpeedWidget, IntervalWidget, AlertWidget
+from ParamWidgets import TireSlipWidget, ParamWidget, CompoundTireWidget, GearWidget, SpeedWidget, IntervalWidget, AlertWidget, FuelWidget
 
 from fdp import ForzaDataPacket
 
@@ -81,6 +81,7 @@ class DisplayWidget(QtWidgets.QFrame):
         middleLayout = QtWidgets.QHBoxLayout()  # Contains the left, centre and right layouts
         posLapDistLayout = QtWidgets.QVBoxLayout()  # Vertical group of pos lap and dist widgets
         lapTimesLayout = QtWidgets.QVBoxLayout()  # Vertical group of lap time widgets
+        fuelLayout = QtWidgets.QVBoxLayout()  # Vertical group of fuel widgets
         leftLayout = QtWidgets.QVBoxLayout()  # Left column, grouping poslapdist and tire widgets
         centreLayout = QtWidgets.QVBoxLayout()  # Centre column, grouping gear, speed and delta
         rightLayout = QtWidgets.QVBoxLayout()  # Right column, grouping time and fuel
@@ -119,6 +120,9 @@ class DisplayWidget(QtWidgets.QFrame):
         self.lastLapTime = ParamWidget("last_lap_time", "LAST")
         self.currentLapTime = ParamWidget("cur_lap_time", "CURRENT")
 
+        # Fuel widget
+        self.fuel = FuelWidget()
+
         # Connect all the widgets --------------------------
 
         self.updateSignal.connect(self.slipRight.update)
@@ -138,8 +142,11 @@ class DisplayWidget(QtWidgets.QFrame):
         self.updateSignal.connect(self.lastLapTime.update)
         self.updateSignal.connect(self.currentLapTime.update)
 
+        self.updateSignal.connect(self.fuel.update)
+
         # Add everything to the layouts ---------------------------
         rightLayout.addLayout(lapTimesLayout)
+        rightLayout.addWidget(self.fuel)
         
         lapTimesLayout.addWidget(self.bestLapTime)
         lapTimesLayout.addWidget(self.lastLapTime)
