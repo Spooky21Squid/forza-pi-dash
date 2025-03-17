@@ -1,7 +1,7 @@
 from PySide6 import QtWidgets
 from PySide6.QtCore import Slot, QThread, QObject, Signal
 
-from ParamWidgets import TireSlipWidget, ParamWidget, DistanceWidget
+from ParamWidgets import TireSlipWidget, ParamWidget
 
 from fdp import ForzaDataPacket
 
@@ -95,7 +95,7 @@ class DisplayWidget(QtWidgets.QFrame):
         # Add the position, lap number and distance widgets
         self.position = ParamWidget("race_pos", "POSITION")
         self.lap = ParamWidget("lap_no", "LAP")
-        self.distance = DistanceWidget("dist_traveled", "DISTANCE")
+        self.distance = ParamWidget("dist_traveled", "DISTANCE")
 
         posLapDistLayout = QtWidgets.QVBoxLayout()
         posLapDistLayout.addWidget(self.position)

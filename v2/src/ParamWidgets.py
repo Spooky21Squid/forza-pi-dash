@@ -54,7 +54,6 @@ class ParamWidget(QtWidgets.QFrame):
         Parameters
         ----------
 
-        - paramName: The name of the parameter in the forza data packet
         - value: The value of the parameter to be formatted
         - dashConfig: The config dict containing the dashboard settings
         """
@@ -78,14 +77,6 @@ class ParamWidget(QtWidgets.QFrame):
                 result = str(value)
         
         return result
-
-
-class DistanceWidget(ParamWidget):
-    def __init__(self, paramName: str, paramLabel: str, paramValue = "0"):
-        super().__init__(paramName, paramLabel, paramValue)
-    
-    def mousePressEvent(self, event):
-        print("Clicked on Distance")
 
 
 class SingleTireWidget(QtWidgets.QFrame):
