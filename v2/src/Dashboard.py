@@ -1,10 +1,13 @@
 from PySide6 import QtWidgets
-from PySide6.QtCore import Slot, QThread, QObject, Signal, Qt
+from PySide6.QtCore import Slot, QThread, QObject, Signal
 
 from ParamWidgets import TireSlipWidget, ParamWidget, CompoundTireWidget, GearWidget, SpeedWidget, IntervalWidget, AlertWidget, FuelWidget, lastLapTimeWidget
+from settingsWidgets import settingsLayout
 
 from fdp import ForzaDataPacket
 
+import pathlib
+import yaml
 import logging
 import select
 import socket
@@ -58,11 +61,50 @@ class SettingsWidget(QtWidgets.QFrame):
     def __init__(self):
         super().__init__()
 
-        self.closeButton = QtWidgets.QPushButton("Close")
+        # Define the layouts --------------------
+        mainLayout = QtWidgets.QVBoxLayout()
+        topBarLayout = QtWidgets.QHBoxLayout()  # The top bar including title, ip and close button
 
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.closeButton)
-        self.setLayout(layout)
+        # Define the widgets --------------------
+
+        self.title = QtWidgets.QLabel("Settings")
+        self.ip = QtWidgets.QLabel("0.0.0.0")
+        self.saveButton = QtWidgets.QPushButton("Save")  # Saves settings to dashConfig and closes the settings tab
+
+        self.formLayout = settingsLayout()
+
+        # Connect all the widgets -----------------
+
+
+
+        # Add everything to the layouts ---------------------
+
+        topBarLayout.addWidget(self.title)
+        topBarLayout.addWidget(self.ip)
+        topBarLayout.addWidget(self.saveButton)
+
+        mainLayout.addLayout(topBarLayout)
+        mainLayout.addLayout(self.formLayout)
+
+        self.setLayout(mainLayout)
+    
+    @Slot()
+    def populateForm(self, dashConfig: dict):
+        """Populates the settings tab form with all the existing settings from dashConfig"""
+
+        self.formLayout.speedUnits.setCurrentText(dashConfig["speedUnits"])
+        self.formLayout.distanceUnits.setCurrentText(dashConfig["distanceUnits"])
+
+        self.formLayout.redlinePercent.setValue(int(dashConfig["redlinePercent"]))
+        self.formLayout.readyPercent.setValue(int(dashConfig["readyPercent"]))
+
+        self.formLayout.tireTempBlue.setValue(int(dashConfig["tireTempBlue"]))
+        self.formLayout.tireTempYellow.setValue(int(dashConfig["tireTempYellow"]))
+        self.formLayout.tireTempRed.setValue(int(dashConfig["tireTempRed"]))
+
+        self.formLayout.pitWarning.setChecked(dashConfig["pitWarning"])
+
+        logging.info("Settings Loaded")
 
 
 class DisplayWidget(QtWidgets.QFrame):
@@ -226,6 +268,7 @@ class Dashboard(QtWidgets.QMainWindow):
 
     updateSignal = Signal(ForzaDataPacket, dict)
     isRacing = Signal(bool)
+    configUpdated = Signal(dict)  # Emit when dashConfig is updated
 
     def __init__(self):
         super().__init__()
@@ -249,7 +292,7 @@ class Dashboard(QtWidgets.QMainWindow):
 
         # Connect the signals to change between settings and display
         self.display.settingsButton.clicked.connect(self.changeToSettingsTab)
-        self.settings.closeButton.clicked.connect(self.changeToDisplayTab)
+        self.settings.saveButton.clicked.connect(self.changeToDisplayTab)
 
         # So the listen button triggers the thread
         self.display.listenButton.clicked.connect(self.toggle_loop)
@@ -259,6 +302,11 @@ class Dashboard(QtWidgets.QMainWindow):
 
         # Show or hide the 'NOT RACING' alert based on fdp.is_race_on
         self.isRacing.connect(self.display.notRacing.showHide)
+
+        # Update the settings tab when dashConfig is updated
+        self.configUpdated.connect(self.settings.populateForm)
+
+        self.settings.saveButton.clicked.connect(self.saveConfig)
 
     @Slot()
     def changeToSettingsTab(self):
@@ -352,3 +400,25 @@ class Dashboard(QtWidgets.QMainWindow):
         
         self.dashConfig = dashConfig
         self.paramConfig = paramConfig
+
+        self.configUpdated.emit(self.dashConfig)
+
+    @Slot()
+    def saveConfig(self):
+        """Updates the dashConfig with new values from the settings tab, and saves
+        them into a yaml file"""
+
+        newSettings = self.settings.formLayout.newDashConfig
+
+        for key, value in newSettings.items():
+            self.dashConfig[key] = value
+        
+        # Save dashConfig to the yaml file
+        parentDir = pathlib.Path(__file__).parent.parent.resolve()
+        dashConfigPath = parentDir / pathlib.Path("config") / pathlib.Path("dashConfig.yaml")
+
+        with open(dashConfigPath, "w") as file:
+            yaml.dump(self.dashConfig, file)
+        
+        logging.info("Saved settings to file")
+
