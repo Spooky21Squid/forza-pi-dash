@@ -20,7 +20,7 @@ class ParamWidget(QtWidgets.QFrame):
     - paramValue: The value of the parameter
     """
 
-    def __init__(self, paramName: str, paramLabel: str, paramValue = "0"):
+    def __init__(self, paramName: str, paramLabel: str, paramValue = "0", stretch = 50):
         super().__init__()
 
         self.paramName = paramName
@@ -33,8 +33,10 @@ class ParamWidget(QtWidgets.QFrame):
         #self.paramValue.setAlignment(Qt.AlignCenter)
 
         layout = QtWidgets.QHBoxLayout()
-        layout.addWidget(self.paramLabel)
-        layout.addWidget(self.paramValue)
+        layout.setSpacing(10)
+        layout.setContentsMargins(0,0,0,0)
+        layout.addWidget(self.paramLabel, stretch)
+        layout.addWidget(self.paramValue, 100 - stretch)
         self.setLayout(layout)
     
     @Slot()
@@ -100,7 +102,7 @@ class SpeedWidget(QtWidgets.QFrame):
     def __init__(self):
         super().__init__()
 
-        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        #self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
 
         self.value = QtWidgets.QLabel("0")
         self.units = QtWidgets.QLabel("mph")
@@ -153,11 +155,12 @@ class SingleTireWidget(QtWidgets.QFrame):
         
         # Shows the temperature by changing the border colour of the box
         self.tireIcon = QtWidgets.QFrame(frameShape=QtWidgets.QFrame.Box)
-        self.tireIcon.setObjectName("tire")
+        self.tireIcon.setObjectName("tireTemp")
 
         # Shows tire wear as a percentage
         self.wear = QtWidgets.QLabel("0%")
         self.wear.setAlignment(Qt.AlignCenter)
+        self.wear.setObjectName("tireWear")
 
         # Position the tire icon and wear % on different sides of the widget
         # depending on orientation (left or right tire). Makes no difference
@@ -274,6 +277,7 @@ class GearWidget(QtWidgets.QLabel):
         super().__init__()
         self.setText("0")
         self.setAlignment(Qt.AlignCenter)
+        self.setMinimumHeight(30)
     
     @Slot()
     def update(self, fdp: ForzaDataPacket, dashConfig: dict):
@@ -300,7 +304,7 @@ class GearWidget(QtWidgets.QLabel):
         elif ratio >= readyPercent and ratio < redlinePercent:
             self.setStyleSheet("color: yellow")
         else:
-            self.setStyleSheet("color: black")
+            self.setStyleSheet("color: white")
 
 
 class IntervalWidget(QtWidgets.QFrame):
@@ -388,6 +392,13 @@ class IntervalWidget(QtWidgets.QFrame):
         if interval < 0:
             sign = "-"
         self.interval.setText("{}{}.{}".format(sign, int(seconds), mseconds))
+
+        if interval > 0:
+            self.interval.setStyleSheet("color: #d54242;")  # Red
+        elif interval < 0:
+            self.interval.setStyleSheet("color: #62d542;")  # Green
+        else:
+            self.interval.setStyleSheet("color: white;")
     
     @Slot()
     def update(self, fdp: ForzaDataPacket, dashConfig: dict):
@@ -509,10 +520,15 @@ class FuelWidget(QtWidgets.QFrame):
         self.lastLap = -3
 
         layout = QtWidgets.QVBoxLayout()
+        layout.setSpacing(0)
+        layout.setContentsMargins(0,0,0,0)
 
-        self.fuelLevel = ParamWidget("fuel", "fUEL LEVEL")
-        self.fuelPerLap = ParamWidget("fuel_per_lap", "FUEL PER LAP")
-        self.lapsLeft = ParamWidget("laps_left", "LAPS LEFT")
+        # How much space the fuel labels and values get
+        widgetStretch = 63
+
+        self.fuelLevel = ParamWidget("fuel", "FUEL LEVEL", stretch=widgetStretch)
+        self.fuelPerLap = ParamWidget("fuel_per_lap", "FUEL PER LAP", stretch=widgetStretch)
+        self.lapsLeft = ParamWidget("laps_left", "LAPS LEFT", stretch=widgetStretch)
 
         layout.addWidget(self.fuelLevel)
         layout.addWidget(self.fuelPerLap)
@@ -572,3 +588,28 @@ class FuelWidget(QtWidgets.QFrame):
                 self.enoughFuel.emit(False)
             else:
                 self.enoughFuel.emit(True)
+
+
+class lastLapTimeWidget(ParamWidget):
+
+    @Slot()
+    def update(self, fdp: ForzaDataPacket, dashConfig: dict):
+        """
+        Overrides the ParamWidget's update method with extra function to
+        compare this time to the best time, and change its colour
+        """
+
+        newValue = getattr(fdp, self.paramName)
+        formattedValue = self.format(newValue, dashConfig)
+        self.paramValue.setText(formattedValue)
+
+        bestLapTime = getattr(fdp, "best_lap_time")
+        if newValue == 0 or bestLapTime == 0:
+            return
+        
+        if newValue > bestLapTime:
+            self.paramLabel.setStyleSheet("color: #d54242;")  # Red
+            self.paramValue.setStyleSheet("color: #d54242;")
+        else:
+            self.paramLabel.setStyleSheet("color: #62d542;")  # Green
+            self.paramValue.setStyleSheet("color: #62d542;")

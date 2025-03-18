@@ -1,7 +1,7 @@
 from PySide6 import QtWidgets
 from PySide6.QtCore import Slot, QThread, QObject, Signal, Qt
 
-from ParamWidgets import TireSlipWidget, ParamWidget, CompoundTireWidget, GearWidget, SpeedWidget, IntervalWidget, AlertWidget, FuelWidget
+from ParamWidgets import TireSlipWidget, ParamWidget, CompoundTireWidget, GearWidget, SpeedWidget, IntervalWidget, AlertWidget, FuelWidget, lastLapTimeWidget
 
 from fdp import ForzaDataPacket
 
@@ -89,17 +89,17 @@ class DisplayWidget(QtWidgets.QFrame):
 
         mainLayout.setSpacing(0)
         mainLayout.setContentsMargins(0,0,0,0)
-        middleLayout.setSpacing(0)
-        middleLayout.setContentsMargins(0,0,0,0)
-        leftLayout.setSpacing(0)
-        leftLayout.setContentsMargins(0,0,0,0)
+
+        # replace below with spacer widgets instead
+        centreLayout.setSpacing(10)
+        rightLayout.setSpacing(10)
+        leftLayout.setSpacing(10)
 
         # Define the widgets ---------------------------
 
         # Top row of buttons
         self.listenButton = QtWidgets.QPushButton("START")
         self.listenButton.setCheckable(True)  # Make toggleable
-        #self.listenButton.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
         self.settingsButton = QtWidgets.QPushButton("SETTINGS")
         self.resetButton = QtWidgets.QPushButton("RESET")
 
@@ -117,7 +117,6 @@ class DisplayWidget(QtWidgets.QFrame):
         
         # Gear indicator, speed and interval
         self.gear = GearWidget()
-        self.gear.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.speed = SpeedWidget()
         self.interval = IntervalWidget()
 
@@ -126,13 +125,13 @@ class DisplayWidget(QtWidgets.QFrame):
         self.notRacing.setObjectName("notRacing")
 
         # Lap time widgets
-        self.bestLapTime = ParamWidget("best_lap_time", "BEST")
-        self.lastLapTime = ParamWidget("last_lap_time", "LAST")
-        self.currentLapTime = ParamWidget("cur_lap_time", "CURRENT")
+        timesStretch = 40
+        self.bestLapTime = ParamWidget("best_lap_time", "BEST", stretch=timesStretch)
+        self.lastLapTime = lastLapTimeWidget("last_lap_time", "LAST", stretch=timesStretch)
+        self.currentLapTime = ParamWidget("cur_lap_time", "CURRENT", stretch=timesStretch)
 
         # Fuel widget
         self.fuel = FuelWidget()
-        self.fuel.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
 
         # Small pit now alert box
         self.pitAlert = AlertWidget("PIT THIS LAP")
@@ -161,29 +160,29 @@ class DisplayWidget(QtWidgets.QFrame):
         self.fuel.enoughFuel.connect(self.pitAlert.showHide)
 
         # Add everything to the layouts ---------------------------
-        rightLayout.addLayout(lapTimesLayout)
-        rightLayout.addWidget(self.fuel)
-        rightLayout.addWidget(self.pitAlert)
+        rightLayout.addLayout(lapTimesLayout, 35)
+        rightLayout.addWidget(self.fuel, 35)
+        rightLayout.addWidget(self.pitAlert, 30)
         
         lapTimesLayout.addWidget(self.bestLapTime)
         lapTimesLayout.addWidget(self.lastLapTime)
         lapTimesLayout.addWidget(self.currentLapTime)
 
-        centreLayout.addWidget(self.gear)
-        centreLayout.addWidget(self.speed)
-        centreLayout.addWidget(self.interval)
-        centreLayout.addWidget(self.notRacing)
+        centreLayout.addWidget(self.gear, 35)
+        centreLayout.addWidget(self.speed, 15)
+        centreLayout.addWidget(self.interval, 15)
+        centreLayout.addWidget(self.notRacing, 30)
 
         posLapDistLayout.addWidget(self.position)
         posLapDistLayout.addWidget(self.lap)
         posLapDistLayout.addWidget(self.distance)
 
-        leftLayout.addLayout(posLapDistLayout)
-        leftLayout.addWidget(self.tires)
+        leftLayout.addLayout(posLapDistLayout, 35)
+        leftLayout.addWidget(self.tires, 65)
 
-        middleLayout.addLayout(leftLayout, 33)
-        middleLayout.addLayout(centreLayout, 33)
-        middleLayout.addLayout(rightLayout, 33)
+        middleLayout.addLayout(leftLayout, 40)
+        middleLayout.addLayout(centreLayout, 20)
+        middleLayout.addLayout(rightLayout, 40)
 
         buttonLayout.addWidget(self.listenButton)
         buttonLayout.addWidget(self.settingsButton)
@@ -265,6 +264,13 @@ class Dashboard(QtWidgets.QMainWindow):
         if not checked:
             # Disable the button until the thread's socket times out, and the thread is terminated
             self.display.listenButton.setEnabled(False)
+
+            # Change the buttons back to normal
+            self.display.listenButton.setStyleSheet("color: white;")
+            self.display.settingsButton.setStyleSheet("color: white;")
+            self.display.resetButton.setStyleSheet("color: white;")
+            self.display.listenButton.setText("START")
+
             self.worker.working = False
             logging.debug("Worker set to false")
             self.thread.quit()
@@ -274,6 +280,16 @@ class Dashboard(QtWidgets.QMainWindow):
             # Disable the settings and reset until player stops listening for packets
             self.display.settingsButton.setEnabled(False)
             self.display.resetButton.setEnabled(False)
+
+            # Change buttons to a darker colour while listening to avoid
+            # distracting the player
+            self.display.listenButton.setStyleSheet("color: #3f3f3f;")
+            self.display.settingsButton.setStyleSheet("color: #3f3f3f;")
+            self.display.resetButton.setStyleSheet("color: #3f3f3f;")
+
+            # Change listen button to 'stop'
+            self.display.listenButton.setText("STOP")
+
             self.worker = Worker(self.dashConfig["port"])  # a new worker
             self.thread = QThread()  # a new thread to listen for packets
             self.worker.moveToThread(self.thread)
