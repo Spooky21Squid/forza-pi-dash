@@ -1,5 +1,5 @@
 from PySide6 import QtWidgets
-from PySide6.QtCore import Slot
+from PySide6.QtCore import Slot, Qt
 import logging
 
 class settingsLayout(QtWidgets.QFormLayout):
@@ -12,6 +12,8 @@ class settingsLayout(QtWidgets.QFormLayout):
         super().__init__()
 
         self.newDashConfig = dict()
+
+        self.setSpacing(20)
 
         # Add widgets corresponding to the settings the user can change
 
@@ -31,6 +33,7 @@ class settingsLayout(QtWidgets.QFormLayout):
         self.tireTempRed = QtWidgets.QSpinBox(maximum=500)
 
         self.pitWarning = QtWidgets.QCheckBox()
+        #self.pitWarning.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
 
         # Connect the widgets
 
@@ -89,14 +92,22 @@ class SettingsWidget(QtWidgets.QFrame):
         # Define the layouts --------------------
         mainLayout = QtWidgets.QVBoxLayout()
         topBarLayout = QtWidgets.QHBoxLayout()  # The top bar including title, ip and close button
+        self.formLayout = settingsLayout()  # The layout for the form itself
 
         # Define the widgets --------------------
 
         self.title = QtWidgets.QLabel("Settings")
         self.ip = QtWidgets.QLabel("0.0.0.0")
         self.saveButton = QtWidgets.QPushButton("Save")  # Saves settings to dashConfig and closes the settings tab
+        
+        scrollAreaContent = QtWidgets.QWidget()
+        scrollAreaContent.setObjectName("settingsScrollArea")
+        scrollAreaContent.setLayout(self.formLayout)
 
-        self.formLayout = settingsLayout()
+        scrollArea = QtWidgets.QScrollArea()  # Put the form in this to make it scrollable
+        scrollArea.setWidget(scrollAreaContent)
+        scrollArea.setWidgetResizable(True)
+        scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
         # Add everything to the layouts ---------------------
 
@@ -105,7 +116,7 @@ class SettingsWidget(QtWidgets.QFrame):
         topBarLayout.addWidget(self.saveButton)
 
         mainLayout.addLayout(topBarLayout)
-        mainLayout.addLayout(self.formLayout)
+        mainLayout.addWidget(scrollArea)
 
         self.setLayout(mainLayout)
     

@@ -1,5 +1,20 @@
-Dashboard, TireSlipWidget {
+Dashboard, TireSlipWidget, QScrollArea {
     background-color: #181818;
+}
+
+QSpinBox, QComboBox, QCheckBox {
+    font-size: 25px;
+    font-family: Audiowide;
+}
+
+QWidget#settingsScrollArea {
+    background-color: #323232;
+    border-radius: 10px 10px 10px 10px;
+}
+
+/* For the settings form */
+QLabel {
+    font-size: 30px;
 }
 
 QLabel, QPushButton {
