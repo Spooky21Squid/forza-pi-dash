@@ -10,6 +10,7 @@ QLabel, QPushButton {
 QPushButton {
     background-color: #181818;
     border: 0;
+    border-radius: 10px;
 }
 
 QFrame#tireTemp {
@@ -41,6 +42,10 @@ QLabel#tireWear {
 
 QPushButton {
     padding: 5px 0 5px 0;
+}
+
+QPushButton::pressed {
+    background-color: #323232;
 }
 
 AlertWidget {
