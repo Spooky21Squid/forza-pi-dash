@@ -8,7 +8,7 @@ import logging
 
 class ParamWidget(QtWidgets.QFrame):
     """
-    A compund widget that simply Displays the name of a parameter, and the value of
+    A compound widget that simply Displays the name of a parameter, and the value of
     that parameter next to it. Eg. tire_temp_FL displays the tempatarure
     of the front left tire.
 
@@ -38,6 +38,12 @@ class ParamWidget(QtWidgets.QFrame):
         layout.addWidget(self.paramLabel, stretch)
         layout.addWidget(self.paramValue, 100 - stretch)
         self.setLayout(layout)
+    
+    @Slot()
+    def reset(self):
+        """Resets the widget back to its starting state with no information"""
+
+        self.paramValue.setText("0")
     
     @Slot()
     def update(self, fdp: ForzaDataPacket, dashConfig: dict):
@@ -121,6 +127,12 @@ class SpeedWidget(QtWidgets.QFrame):
         self.setLayout(layout)
     
     @Slot()
+    def reset(self):
+        """Resets the widget back to its starting state with no information"""
+        
+        self.value.setText("0")
+    
+    @Slot()
     def update(self, fdp: ForzaDataPacket, dashConfig: dict):
         """
         Updates the speed and units with an updated value from the forza data packet
@@ -173,6 +185,13 @@ class SingleTireWidget(QtWidgets.QFrame):
             layout.addWidget(self.tireIcon)
             layout.addWidget(self.wear)
         self.setLayout(layout)
+    
+    @Slot()
+    def reset(self):
+        """Resets the widget back to its starting state with no information"""
+        
+        self.wear.setText("0%")
+        self.tireIcon.setStyleSheet("border: 3px solid #44e520;")
     
     @Slot()
     def update(self, fdp: ForzaDataPacket, dashConfig: dict):
@@ -234,6 +253,14 @@ class CompoundTireWidget(QtWidgets.QFrame):
         self.setLayout(layout)
     
     @Slot()
+    def reset(self):
+        """Resets the widget back to its starting state with no information"""
+        self.fl.reset()
+        self.fr.reset()
+        self.rl.reset()
+        self.rr.reset()
+    
+    @Slot()
     def update(self, fdp: ForzaDataPacket, dashConfig: dict):
         """Updates each single tire widget with their tire wear and temps"""
         self.fl.update(fdp, dashConfig)
@@ -259,7 +286,11 @@ class TireSlipWidget(QtWidgets.QProgressBar):
         self.setMinimum(5)
         self.setTextVisible(False)
         self.setOrientation(Qt.Vertical)
-
+    
+    @Slot()
+    def reset(self):
+        """Resets the widget back to its starting state with no information"""
+        self.setValue(0)
     
     @Slot()
     def update(self, fdp: ForzaDataPacket, dashConfig: dict):
@@ -278,6 +309,11 @@ class GearWidget(QtWidgets.QLabel):
         self.setText("0")
         self.setAlignment(Qt.AlignCenter)
         self.setMinimumHeight(30)
+    
+    @Slot()
+    def reset(self):
+        """Resets the widget back to its starting state with no information"""
+        self.setText("0")
     
     @Slot()
     def update(self, fdp: ForzaDataPacket, dashConfig: dict):
@@ -342,7 +378,19 @@ class IntervalWidget(QtWidgets.QFrame):
         # lap time recorded at that distance in seconds
         self.bestLapPoints = list()
         self.currentLapPoints = list()
-
+    
+    @Slot()
+    def reset(self):
+        """Resets the widget back to its starting state with no information"""
+        self.interval.setText("0.000")
+        self.bestLap = None
+        self.currentLap = -2
+        self.syncLap = -1
+        self.currentPoint = None
+        self.distanceFactor = 0
+        self.bestLapPoints = list()
+        self.currentLapPoints = list()
+        self.interval.setStyleSheet("color: white;")
 
     def insertPoint(self):
         """
@@ -536,6 +584,16 @@ class FuelWidget(QtWidgets.QFrame):
 
         self.setLayout(layout)
     
+    @Slot()
+    def reset(self):
+        """Resets the widget back to its starting state with no information"""
+        
+        self.fuelLevel.reset()
+        self.fuelPerLap.reset()
+        self.lapsLeft.reset()
+        self.fuelLevelHistory = None
+        self.lastLap = -3
+    
     def getAverageFuelUsage(self):
         """Gets the average fuel usage over the last 3 laps using the fuelLevelHistory list"""
 
@@ -591,6 +649,13 @@ class FuelWidget(QtWidgets.QFrame):
 
 
 class lastLapTimeWidget(ParamWidget):
+
+    @Slot()
+    def reset(self):
+        """Resets the widget back to its starting state with no information"""
+        self.paramValue.setText("0")
+        self.paramLabel.setStyleSheet("color: white;")
+        self.paramValue.setStyleSheet("color: white;")
 
     @Slot()
     def update(self, fdp: ForzaDataPacket, dashConfig: dict):

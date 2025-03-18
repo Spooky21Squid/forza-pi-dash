@@ -159,6 +159,20 @@ class DisplayWidget(QtWidgets.QFrame):
         self.updateSignal.connect(self.fuel.update)
         self.fuel.enoughFuel.connect(self.pitAlert.showHide)
 
+        self.resetButton.clicked.connect(self.slipRight.reset)
+        self.resetButton.clicked.connect(self.slipLeft.reset)
+        self.resetButton.clicked.connect(self.position.reset)
+        self.resetButton.clicked.connect(self.lap.reset)
+        self.resetButton.clicked.connect(self.distance.reset)
+        self.resetButton.clicked.connect(self.tires.reset)
+        self.resetButton.clicked.connect(self.gear.reset)
+        self.resetButton.clicked.connect(self.speed.reset)
+        self.resetButton.clicked.connect(self.interval.reset)
+        self.resetButton.clicked.connect(self.bestLapTime.reset)
+        self.resetButton.clicked.connect(self.lastLapTime.reset)
+        self.resetButton.clicked.connect(self.currentLapTime.reset)
+        self.resetButton.clicked.connect(self.fuel.reset)
+
         # Add everything to the layouts ---------------------------
         rightLayout.addLayout(lapTimesLayout, 35)
         rightLayout.addWidget(self.fuel, 35)
