@@ -99,6 +99,7 @@ class SettingsWidget(QtWidgets.QFrame):
         self.title = QtWidgets.QLabel("Settings")
         self.ip = QtWidgets.QLabel("0.0.0.0")
         self.saveButton = QtWidgets.QPushButton("Save")  # Saves settings to dashConfig and closes the settings tab
+        self.cancelButton = QtWidgets.QPushButton("Cancel")  # Exits the settings button without saving anything
         
         scrollAreaContent = QtWidgets.QWidget()
         scrollAreaContent.setObjectName("settingsScrollArea")
@@ -113,6 +114,7 @@ class SettingsWidget(QtWidgets.QFrame):
 
         topBarLayout.addWidget(self.title)
         topBarLayout.addWidget(self.ip)
+        topBarLayout.addWidget(self.cancelButton)
         topBarLayout.addWidget(self.saveButton)
 
         mainLayout.addLayout(topBarLayout)

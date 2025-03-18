@@ -92,6 +92,7 @@ class Dashboard(QtWidgets.QMainWindow):
         # Connect the signals to change between settings and display
         self.display.settingsButton.clicked.connect(self.changeToSettingsTab)
         self.settings.saveButton.clicked.connect(self.changeToDisplayTab)
+        self.settings.cancelButton.clicked.connect(self.changeToDisplayTab)
 
         # So the listen button triggers the thread
         self.display.listenButton.clicked.connect(self.toggle_loop)
