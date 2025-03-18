@@ -1,8 +1,5 @@
 from PySide6 import QtWidgets
-from PySide6.QtCore import Qt, Slot, Signal
-from fdp import ForzaDataPacket
-from enum import Enum
-from math import floor
+from PySide6.QtCore import Slot
 import logging
 
 class settingsLayout(QtWidgets.QFormLayout):
@@ -81,3 +78,53 @@ class settingsLayout(QtWidgets.QFormLayout):
 
         self.newDashConfig["pitWarning"] = self.pitWarning.isChecked()
         logging.info("Settings form updated")
+        
+
+class SettingsWidget(QtWidgets.QFrame):
+    """The widget for the settings pane"""
+
+    def __init__(self):
+        super().__init__()
+
+        # Define the layouts --------------------
+        mainLayout = QtWidgets.QVBoxLayout()
+        topBarLayout = QtWidgets.QHBoxLayout()  # The top bar including title, ip and close button
+
+        # Define the widgets --------------------
+
+        self.title = QtWidgets.QLabel("Settings")
+        self.ip = QtWidgets.QLabel("0.0.0.0")
+        self.saveButton = QtWidgets.QPushButton("Save")  # Saves settings to dashConfig and closes the settings tab
+
+        self.formLayout = settingsLayout()
+
+        # Add everything to the layouts ---------------------
+
+        topBarLayout.addWidget(self.title)
+        topBarLayout.addWidget(self.ip)
+        topBarLayout.addWidget(self.saveButton)
+
+        mainLayout.addLayout(topBarLayout)
+        mainLayout.addLayout(self.formLayout)
+
+        self.setLayout(mainLayout)
+    
+    @Slot()
+    def populateForm(self, dashConfig: dict):
+        """Populates the settings tab form with all the existing settings from dashConfig"""
+
+        self.formLayout.port.setValue(int(dashConfig["port"]))
+
+        self.formLayout.speedUnits.setCurrentText(dashConfig["speedUnits"])
+        self.formLayout.distanceUnits.setCurrentText(dashConfig["distanceUnits"])
+
+        self.formLayout.redlinePercent.setValue(int(dashConfig["redlinePercent"]))
+        self.formLayout.readyPercent.setValue(int(dashConfig["readyPercent"]))
+
+        self.formLayout.tireTempBlue.setValue(int(dashConfig["tireTempBlue"]))
+        self.formLayout.tireTempYellow.setValue(int(dashConfig["tireTempYellow"]))
+        self.formLayout.tireTempRed.setValue(int(dashConfig["tireTempRed"]))
+
+        self.formLayout.pitWarning.setChecked(dashConfig["pitWarning"])
+
+        logging.info("Settings Loaded")
