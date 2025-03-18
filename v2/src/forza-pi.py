@@ -44,7 +44,7 @@ def run(ip: str, dashConfig:dict, paramConfig:dict, style:str):
 
     db = Dashboard()
     db.updateConfig(dashConfig, paramConfig)
-    db.ip = ip
+    db.updateIP(ip)
     db.show()
     
     if style != "":

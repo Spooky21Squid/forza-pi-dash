@@ -16,7 +16,9 @@ class settingsLayout(QtWidgets.QFormLayout):
 
         self.newDashConfig = dict()
 
-        # Widgets corresponding to the settings the user can change
+        # Add widgets corresponding to the settings the user can change
+
+        self.port = QtWidgets.QSpinBox(minimum=1025, maximum=65535)
         
         self.speedUnits = QtWidgets.QComboBox()
         self.speedUnits.addItems(["metric", "imperial"])
@@ -34,7 +36,9 @@ class settingsLayout(QtWidgets.QFormLayout):
         self.pitWarning = QtWidgets.QCheckBox()
 
         # Connect the widgets
-        
+
+        self.port.valueChanged.connect(self.onUpdated)
+
         self.speedUnits.currentTextChanged.connect(self.onUpdated)
         self.distanceUnits.currentTextChanged.connect(self.onUpdated)
 
@@ -49,6 +53,7 @@ class settingsLayout(QtWidgets.QFormLayout):
 
         # Add the widgets to the form
 
+        self.addRow("Port", self.port)
         self.addRow("Speed Units", self.speedUnits)
         self.addRow("Distance Units", self.distanceUnits)
         self.addRow("Redline Percent", self.redlinePercent)
@@ -61,6 +66,8 @@ class settingsLayout(QtWidgets.QFormLayout):
     @Slot()
     def onUpdated(self):
         """Updates the newDashConfig every time a form's widget updates its value"""
+
+        self.newDashConfig["port"] = self.port.value()
 
         self.newDashConfig["speedUnits"] = self.speedUnits.currentText()
         self.newDashConfig["distanceUnits"] = self.distanceUnits.currentText()

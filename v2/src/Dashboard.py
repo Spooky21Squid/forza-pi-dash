@@ -33,7 +33,7 @@ class Worker(QObject):
     def work(self):
         """Binds the socket and starts listening for packets"""
         self.sock.bind(('', self.port))
-        logging.info("Started listening...")
+        logging.info("Started listening on port {}".format(self.port))
 
         while self.working:
             try:
@@ -91,6 +91,8 @@ class SettingsWidget(QtWidgets.QFrame):
     @Slot()
     def populateForm(self, dashConfig: dict):
         """Populates the settings tab form with all the existing settings from dashConfig"""
+
+        self.formLayout.port.setValue(int(dashConfig["port"]))
 
         self.formLayout.speedUnits.setCurrentText(dashConfig["speedUnits"])
         self.formLayout.distanceUnits.setCurrentText(dashConfig["distanceUnits"])
@@ -422,3 +424,7 @@ class Dashboard(QtWidgets.QMainWindow):
         
         logging.info("Saved settings to file")
 
+    def updateIP(self, ip:str):
+        """Updates the IP Address displayed on the settings page"""
+        self.ip = ip
+        self.settings.ip.setText(ip)
