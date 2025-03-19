@@ -39,6 +39,8 @@ Tire slip indicators for the rear left and rear right tires are shown on either 
 - `pip install -r requirements.txt`
 
 ## Running the Dashboard
+The main file to run is called `forza-pi.py` and is located in the 'src' directory. Run `python src/forza-pi.py` to start the dashboard. It will launch in a new window, and start logging to the terminal.
+
 Enable Data Out in Forza by navigating to Settings > Gameplay & Hud > UDP Race Telemetry, and switch the Data Out setting to On.
 
 Match the Data Out IP Address setting in Forza to the IP address of the raspberry pi (or the computer running the dashboard). To find this, go to the *Settings* tab in the dashboard. It should be displayed at the top and look something like '192.168.7.54'.
