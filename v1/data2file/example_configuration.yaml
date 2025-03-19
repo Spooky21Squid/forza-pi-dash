@@ -1,9 +1,0 @@
-port: 1337
-output_filename: forza_data.csv
-format: csv
-append: False
-packet_format: dash
-motec: True
-parameter_list:
-  - timestamp_ms
-  - lap_no

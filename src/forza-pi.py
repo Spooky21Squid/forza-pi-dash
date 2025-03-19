@@ -33,7 +33,7 @@ def getIP():
     
     return str(ip)
 
-def run(ip: str, dashConfig:dict, paramConfig:dict, style:str):
+def run(ip: str, dashConfig:dict, style:str):
     app = QtWidgets.QApplication(sys.argv)
 
     # Add and check the custom fonts
@@ -43,7 +43,7 @@ def run(ip: str, dashConfig:dict, paramConfig:dict, style:str):
     logging.debug("Font families: {}".format(families))
 
     db = Dashboard()
-    db.updateConfig(dashConfig, paramConfig)
+    db.updateConfig(dashConfig)
     db.updateIP(ip)
     db.show()
     
@@ -63,8 +63,7 @@ if __name__ == "__main__":
 
     # Tries to read the config files
     dashConfigPath = parentDir / pathlib.Path("config") / pathlib.Path("dashConfig.yaml")
-    paramConfigPath = parentDir / pathlib.Path("config") / pathlib.Path("paramConfig.yaml")
-    dashConfig, paramConfig = None, None
+    dashConfig = None
 
     try:
         with open(dashConfigPath) as f:
@@ -76,18 +75,6 @@ if __name__ == "__main__":
     if dashConfig is None:
         logging.info("dashConfig.yaml is empty")
         exit(0)
-
-    try:
-        with open(paramConfigPath) as f:
-            paramConfig = yaml.safe_load(f)
-    except FileNotFoundError:
-        logging.info("Unable to open paramConfig.yaml")
-        exit(0)
-    
-    paramConfig = {}  # Remove (for testing only) ---------------------------------------------------------
-    if paramConfig is None:
-        logging.info("paramConfig.yaml is empty")
-        exit(0)
     
     # Tries to read the stylesheets
     stylesheetsPath = parentDir / pathlib.Path("stylesheets")
@@ -97,5 +84,5 @@ if __name__ == "__main__":
             style += f.read() + "\n\n"
 
 
-    run(ip, dashConfig, paramConfig, style)
+    run(ip, dashConfig, style)
     

@@ -76,7 +76,6 @@ class Dashboard(QtWidgets.QMainWindow):
         self.thread = None
 
         self.dashConfig = dict()
-        self.paramConfig = dict()
 
         self.ip = ""
 
@@ -195,12 +194,10 @@ class Dashboard(QtWidgets.QMainWindow):
         """Updates the port that listens for forza UDP packets"""
         pass
 
-    def updateConfig(self, dashConfig:dict = None, paramConfig:dict = None):
+    def updateConfig(self, dashConfig:dict = None):
         """Updates the dashboard's configuration"""
         
         self.dashConfig = dashConfig
-        self.paramConfig = paramConfig
-
         self.configUpdated.emit(self.dashConfig)
 
     @Slot()

@@ -1,8 +1,8 @@
 distanceUnits: imperial
 pitWarning: true
 port: 1337
-readyPercent: 75
-redlinePercent: 85
+readyPercent: 85
+redlinePercent: 90
 speedUnits: imperial
 tireTempBlue: 160
 tireTempRed: 330

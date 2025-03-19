@@ -79,7 +79,7 @@ class settingsLayout(QtWidgets.QFormLayout):
         self.newDashConfig["tireTempRed"] = self.tireTempRed.value()
 
         #self.newDashConfig["pitWarning"] = self.pitWarning.isChecked()
-        logging.info("Settings form updated")
+        logging.debug("Settings form updated")
         
 
 class SettingsWidget(QtWidgets.QFrame):
