@@ -35,11 +35,22 @@ Tire slip indicators for the rear left and rear right tires are shown on either 
 - `source venv_name/bin/activate` (linux)
 - `venv_name\Scripts\activate.bat` (windows)
 3. Clone this project
+  - `git clone https://github.com/Spooky21Squid/forza-pi-dash.git`
 4. Install the required Python packages (located in requirements.txt) into the virtual environment
 - `pip install -r requirements.txt`
+5. Check the required packages have been installed by running `pip list`. It should list the following packages:
+  ```
+PySide6            6.8.2.1
+PySide6_Addons     6.8.2.1
+PySide6_Essentials 6.8.2.1
+PyYAML             6.0.2
+shiboken6          6.8.2.1
+```
+
+If the packages can't be installed properly, you can go back to previous versions of PySide6 and the dashboard will probably work.
 
 ## Running the Dashboard
-The main file to run is called `forza-pi.py` and is located in the 'src' directory. Run `python src/forza-pi.py` to start the dashboard. It will launch in a new window, and start logging to the terminal.
+The main file to run is called `forza-pi.py` and is located in the 'src' directory. Run `python src/forza-pi.py` to start the dashboard. It will launch in a new window, and start logging to the terminal. You might be prompted to allow python to access your network - click yes or any connections the dashboard will try to make will be blocked by the firewall.
 
 Enable Data Out in Forza by navigating to Settings > Gameplay & Hud > UDP Race Telemetry, and switch the Data Out setting to On.
 
