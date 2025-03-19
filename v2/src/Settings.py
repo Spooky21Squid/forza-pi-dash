@@ -32,8 +32,7 @@ class settingsLayout(QtWidgets.QFormLayout):
         self.tireTempYellow = QtWidgets.QSpinBox(maximum=500)
         self.tireTempRed = QtWidgets.QSpinBox(maximum=500)
 
-        self.pitWarning = QtWidgets.QCheckBox()
-        #self.pitWarning.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
+        #self.pitWarning = QtWidgets.QCheckBox()
 
         # Connect the widgets
 
@@ -49,7 +48,7 @@ class settingsLayout(QtWidgets.QFormLayout):
         self.tireTempYellow.valueChanged.connect(self.onUpdated)
         self.tireTempRed.valueChanged.connect(self.onUpdated)
 
-        self.pitWarning.checkStateChanged.connect(self.onUpdated)
+        #self.pitWarning.checkStateChanged.connect(self.onUpdated)
 
         # Add the widgets to the form
 
@@ -61,7 +60,7 @@ class settingsLayout(QtWidgets.QFormLayout):
         self.addRow("Blue Tire Temp", self.tireTempBlue)
         self.addRow("Yellow Tire Temp", self.tireTempYellow)
         self.addRow("Red Tire Temp", self.tireTempRed)
-        self.addRow("Display Pit Warning", self.pitWarning)
+        #self.addRow("Display Pit Warning", self.pitWarning)
     
     @Slot()
     def onUpdated(self):
@@ -79,7 +78,7 @@ class settingsLayout(QtWidgets.QFormLayout):
         self.newDashConfig["tireTempYellow"] = self.tireTempYellow.value()
         self.newDashConfig["tireTempRed"] = self.tireTempRed.value()
 
-        self.newDashConfig["pitWarning"] = self.pitWarning.isChecked()
+        #self.newDashConfig["pitWarning"] = self.pitWarning.isChecked()
         logging.info("Settings form updated")
         
 
@@ -138,6 +137,6 @@ class SettingsWidget(QtWidgets.QFrame):
         self.formLayout.tireTempYellow.setValue(int(dashConfig["tireTempYellow"]))
         self.formLayout.tireTempRed.setValue(int(dashConfig["tireTempRed"]))
 
-        self.formLayout.pitWarning.setChecked(dashConfig["pitWarning"])
+        #self.formLayout.pitWarning.setChecked(dashConfig["pitWarning"])
 
         logging.info("Settings Loaded")
