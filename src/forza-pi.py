@@ -1,6 +1,6 @@
 import sys
 from PySide6 import QtWidgets, QtGui
-from Dashboard import Dashboard
+from MainWindow import MainWindow
 import socket
 import pathlib
 import yaml
@@ -42,7 +42,7 @@ def run(ip: str, dashConfig:dict, style:str):
     families = QtGui.QFontDatabase.applicationFontFamilies(id)
     logging.debug("Font families: {}".format(families))
 
-    db = Dashboard()
+    db = MainWindow()
     db.updateConfig(dashConfig)
     db.updateIP(ip)
     db.show()

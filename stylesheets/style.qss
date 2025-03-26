@@ -1,4 +1,4 @@
-Dashboard, TireSlipWidget, QScrollArea {
+MainWindow, TireSlipWidget, QScrollArea {
     background-color: #181818;
 }
 
