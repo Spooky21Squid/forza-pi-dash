@@ -1,5 +1,5 @@
 from PySide6 import QtWidgets
-from PySide6.QtCore import Slot, QThread, QObject, Signal
+from PySide6.QtCore import Slot, QThread, QObject, Signal, Qt
 
 from fdp import ForzaDataPacket
 from Settings import SettingsWidget
@@ -106,6 +106,16 @@ class Dashboard(QtWidgets.QMainWindow):
         self.configUpdated.connect(self.settings.populateForm)
 
         self.settings.saveButton.clicked.connect(self.saveConfig)
+
+        self.settings.fullScreenToggleButton.clicked.connect(self.toggleFullScreen)
+    
+    @Slot()
+    def toggleFullScreen(self):
+        print("In toggle fullscreen")
+        if self.windowState() & Qt.WindowFullScreen:
+            self.showNormal()
+        else:
+            self.showFullScreen()
 
     @Slot()
     def changeToSettingsTab(self):

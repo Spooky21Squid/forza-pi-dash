@@ -17,6 +17,10 @@ QLabel {
     font-size: 30px;
 }
 
+QLabel#ipaddress {
+    font-size: 20px;
+}
+
 QLabel, QPushButton {
     color: white;
     font-family: Audiowide;
