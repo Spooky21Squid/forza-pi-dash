@@ -1,5 +1,6 @@
 import sys
 from PySide6 import QtWidgets, QtGui
+from PySide6.QtCore import Qt
 from MainWindow import MainWindow
 import socket
 import pathlib
@@ -35,6 +36,8 @@ def getIP():
 
 def run(ip: str, dashConfig:dict, style:str):
     app = QtWidgets.QApplication(sys.argv)
+
+    app.setOverrideCursor(Qt.BlankCursor)
 
     # Add and check the custom fonts
     id = QtGui.QFontDatabase.addApplicationFont(str(fontPath))
