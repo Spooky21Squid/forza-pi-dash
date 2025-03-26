@@ -108,6 +108,7 @@ class SettingsWidget(QtWidgets.QFrame):
         scrollAreaContent.setLayout(self.formLayout)
 
         scrollArea = QtWidgets.QScrollArea()  # Put the form in this to make it scrollable
+        QtWidgets.QScroller.grabGesture(scrollArea.viewport(),QtWidgets.QScroller.LeftMouseButtonGesture)
         scrollArea.setWidget(scrollAreaContent)
         scrollArea.setWidgetResizable(True)
         scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
