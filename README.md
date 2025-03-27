@@ -102,7 +102,7 @@ If you would like to develop this further, feel free to fork this repository and
 - Waveshare 4.3" DSI QLED Touchscreen Display for Raspberry Pi (https://www.waveshare.com/wiki/4.3inch_DSI_QLED) (Very easy to install, just connect the display cable to the Pi - no drivers or editing config files)
 - Waveshare Low-Profile CPU Cooling Fan (https://www.waveshare.com/wiki/PI-FAN-3007) (Not really necessary unless you live in a very hot climate. With the fan running the CPU temps were around 30C)
 - 8 M2.5 x 8mm screws to attach the display, Pi, fan and backplate together
-- Laser cut and engraved 3mm clear acrylic backplate (SVG file in the /assets folder)
+- Laser cut and engraved 3mm clear acrylic backplate (SVG file in the /assets folder) (The backplate in the image has a crack, due to damage sustained during postage)
 
 ![1000009019(1)](https://github.com/user-attachments/assets/46adc3e2-bb20-4c6b-8e6f-db48db7de8dd)
 ![1000009018(1)](https://github.com/user-attachments/assets/ffd8681c-412c-4f83-ae37-da5ed2f69bc4)
